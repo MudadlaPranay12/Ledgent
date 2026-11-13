@@ -1,379 +1,489 @@
-# Ledgent — voice-first khata for Indian kirana shops
+# Ledgent — Your Shop. Your Language. Your Ledger.
 
-A shopkeeper holds the phone, speaks across the counter, and the transaction is
-written into their notebook. Speech recognition is **Gnani Prisma v3.0**, speech
-synthesis is **Gnani Timbre v3.0**, both streamed over WebSocket through a small
-Node gateway that holds the API key. The ledger itself never leaves the device.
+<p align="center">
+  <img src="assets/screenshots/ledgent-cover.png" alt="Ledgent — Voice-first digital khata" width="900" />
+</p>
 
-Hackathon: Gnani Voice Hackathon, Problem Statement 2.
+<p align="center">
+  <strong>A multilingual, voice-first digital khata built for India's neighbourhood retailers.</strong>
+  <br />
+  Speak naturally. Record transactions. Manage customer credit. In your language.
+</p>
+
+<p align="center">
+  <strong>Powered by Gnani Prisma v3.0 and Gnani Timbre v3.0</strong>
+</p>
 
 ---
 
-## 1. Problem statement
+## The Problem
 
-Small shopkeepers keep credit ("udhaar") in a paper khata because typing an entry
-mid-counter is slower than the conversation. Existing apps assume a form, a
-keyboard, and English. The shopkeeper speaks Hinglish, Telugu, Tamil or Marathi,
-often in one sentence, and cares about three things only: who, how much, and
-whether it was credit or payment.
+Across India, neighbourhood retailers manage customer credit and daily payments using traditional handwritten khata books.
 
-## 2. The Ledgent solution
+These books are familiar and accessible, but maintaining them manually becomes difficult when:
 
-* **Hold to talk.** Press the notebook, speak, release. Release is the hard
-  endpoint; a new press while Ledgent is speaking cuts it off (barge-in).
-* **Prisma writes the sentence onto the page** in a hand-written style, then the
-  deterministic parser turns it into a pencil draft: customer, amount, direction,
-  date.
-* **Ledgent reads the draft back** with Timbre and asks before saving. Nothing is
-  committed without confirmation.
-* **Confirmed entries become blue ink** in an event-sourced, hash-chained ledger
-  stored on the device (IndexedDB).
-* **Spoken queries** ("Suresh ka total?", "aaj kitna udhaar gaya?") are answered
-  locally from that ledger and spoken back.
-* **Corrections** ("nahi, 430") reverse the original event and post a replacement;
-  the hash chain still verifies.
+- Multiple customers make transactions throughout the day.
+- Shopkeepers have limited time to type or navigate applications.
+- Customers ask for outstanding balances.
+- Similar customer names can cause accounting mistakes.
+- Digital accounting applications introduce language and usability barriers.
 
-## 3. Architecture
+For many shopkeepers, the problem is not a lack of technology. It is that technology expects them to change the way they already work.
 
+**We asked a different question: What if the technology understood the shopkeeper instead?**
+
+## Our Solution — Ledgent
+
+Ledgent transforms the familiar Indian khata into a voice-first digital experience.
+
+A shopkeeper can speak naturally in a supported language, and Ledgent processes the speech, understands the intended transaction, prepares a structured entry, and asks for confirmation before saving it.
+
+It brings together:
+
+- A familiar, ledger-inspired interface.
+- Real-time speech recognition through Gnani Prisma.
+- Spoken responses through Gnani Timbre.
+- Multilingual interface and language handling.
+- Customer-specific credit and payment records.
+- Transaction clarification and confirmation.
+- A lightweight, mobile-first Progressive Web App.
+
+**Ledgent is not another chatbot. It is a voice-driven interface for everyday shop accounting.**
+
+---
+
+## See Ledgent in Action
+
+### 1. The Digital Khata
+
+<p align="center">
+  <img src="assets/screenshots/main-ledger.png" alt="Ledgent main ledger interface" width="850" />
+</p>
+
+A familiar ledger-inspired interface with customer records, outstanding balances, and transaction history.
+
+### 2. Voice-First Interaction
+
+<p align="center">
+  <img src="assets/screenshots/voice-interaction.png" alt="Ledgent voice interaction" width="850" />
+</p>
+
+Speak naturally instead of typing every transaction. The application captures speech and displays the recognized transcript for transaction understanding.
+
+### 3. Multilingual Experience
+
+<p align="center">
+  <img src="assets/screenshots/multilingual-ui.png" alt="Ledgent multilingual interface" width="850" />
+</p>
+
+The interface follows the selected language, with explicit language selection and locale handling across the voice pipeline.
+
+### 4. Transaction Confirmation
+
+<p align="center">
+  <img src="assets/screenshots/transaction-confirmation.png" alt="Ledgent transaction confirmation" width="850" />
+</p>
+
+A recognized sentence is not automatically treated as a completed financial transaction. Ledgent prepares a transaction for review and confirmation before saving.
+
+---
+
+## What Makes Ledgent Different?
+
+| Typical digital bookkeeping | Ledgent |
+|---|---|
+| Primarily form and keyboard driven | Voice-first interaction |
+| Often assumes a preferred interface language | Designed for multiple Indian languages |
+| Requires users to navigate accounting workflows | Uses natural conversational input |
+| Can make incorrect assumptions about ambiguous input | Preserves transcripts and asks for clarification |
+| Treats speech as an additional input method | Builds the transaction workflow around voice |
+
+Our central design principle is simple:
+
+**The shopkeeper should not have to learn how to speak to software. The software should adapt to how the shopkeeper communicates.**
+
+---
+
+## Multilingual by Design
+
+India's retail ecosystem is linguistically diverse. Ledgent is designed with that reality at its core.
+
+The application currently integrates eight language locales:
+
+| Language | Locale |
+|---|---|
+| Hindi | `hi-IN` |
+| English | `en-IN` |
+| Telugu | `te-IN` |
+| Tamil | `ta-IN` |
+| Kannada | `kn-IN` |
+| Malayalam | `ml-IN` |
+| Bengali | `bn-IN` |
+| Marathi | `mr-IN` |
+
+Language selection is explicit. The selected locale is carried through the application and voice gateway instead of relying on an implicit default.
+
+The application separates:
+
+1. Selected language and locale.
+2. Speech recognition.
+3. Transaction understanding.
+4. Interface localization.
+5. Spoken response generation.
+
+This separation matters. A recognized transcript can be correct even when transaction intent is unclear. Ledgent preserves the original transcript and can request clarification instead of silently replacing what the shopkeeper said.
+
+**Validation status:** The multilingual integration has been exercised with synthesized audio, Prisma recognition round-trips, browser microphone-pipeline tests, and localized interface checks. Native-speaker validation across all eight languages remains future work.
+
+---
+
+## Powered by Gnani AI Voice
+
+Gnani's voice technologies are not decorative additions to Ledgent. They form the core of the interaction model.
+
+### Gnani Prisma v3.0 — Speech to Text
+
+Prisma powers the speech recognition layer.
+
+It enables Ledgent to:
+
+- Capture microphone audio.
+- Stream audio through a WebSocket connection.
+- Receive recognized text.
+- Work with the requested language locale.
+- Pass transcripts to the transaction-understanding layer.
+
+### Gnani Timbre v3.0 — Text to Speech
+
+Timbre powers the spoken response experience.
+
+It is used for:
+
+- Transaction readbacks.
+- Clarification questions.
+- Balance responses.
+- Conversational confirmations.
+
+The active language is passed through the response pipeline so spoken feedback can follow the shopkeeper's selected locale.
+
+### End-to-End Voice Workflow
+
+```mermaid
+flowchart TD
+    A["Shopkeeper speaks"] --> B["Microphone capture"]
+    B --> C["Audio processing"]
+    C --> D["Gnani Prisma v3.0"]
+    D --> E["Recognized transcript"]
+    E --> F["Language-aware normalization"]
+    F --> G["Transaction understanding"]
+    G --> H{"Intent clear?"}
+    H -->|No| I["Ask for clarification"]
+    H -->|Yes| J["Prepare transaction"]
+    I --> K["Gnani Timbre v3.0"]
+    J --> L["Read back transaction"]
+    L --> M{"Shopkeeper confirms?"}
+    M -->|Yes| N["Save ledger entry"]
+    M -->|No| O["Cancel or correct"]
+    N --> K
 ```
- Android Chrome (static HTML/CSS/JS, no build step)
- ┌───────────────────────────────────────────────────────────────┐
- │ index.html + js/app.js        notebook UI, drafts, ledger view │
- │ js/voice-gnani.js             gateway client, PCM playback     │
- │ js/audio-capture.js           AudioWorklet mic → 16 kHz PCM16  │
- │ js/parser.js + js/lexicon/*   deterministic multilingual parse │
- │ js/ledger.js                  hash-chained events in IndexedDB │
- └───────────────┬───────────────────────────────────────────────┘
-                 │  GET /health, GET /session (short-lived token)
-                 │  WS /voice  (Origin checked, token single-use)
- ┌───────────────▼───────────────────────────────────────────────┐
- │ gateway/server.js            native Node http + ws, no Docker  │
- │   · holds GNANI_API_KEY (server-side only)                     │
- │   · forwards exactly 1024-byte PCM16 frames upstream           │
- │   · streams Timbre PCM chunks back as base64                   │
- │   · cancellation, barge-in, rate limit, usage counter          │
- └───────┬───────────────────────────────────┬───────────────────┘
-         │ WSS stt/v3/stream                 │ WSS api/v1/tts
- ┌───────▼────────────┐            ┌─────────▼──────────┐
- │ Gnani Prisma v3.0  │            │ Gnani Timbre v3.0  │
- └────────────────────┘            └────────────────────┘
+
+---
+
+## How a Transaction Works
+
+Consider a shopkeeper recording a customer's purchase on credit.
+
+The workflow is designed to be understandable and safe:
+
+1. The shopkeeper speaks into the microphone.
+2. Prisma recognizes the spoken input.
+3. Ledgent preserves and displays the transcript.
+4. The transaction engine identifies the customer, amount, and transaction intent.
+5. If important information is ambiguous, Ledgent asks a clarification question.
+6. Ledgent reads back the proposed transaction.
+7. The shopkeeper confirms or corrects it.
+8. The ledger is updated only after confirmation.
+
+### Structured Transaction Understanding
+
+| Field | Purpose |
+|---|---|
+| Customer | Identifies the customer |
+| Amount | Represents the transaction value |
+| Direction | Credit or payment |
+| Date | Transaction date |
+| Intent | Transaction, balance query, correction, or unknown |
+| Confidence | Helps determine when clarification is necessary |
+
+### Handling Ambiguous Customers
+
+Imagine two customers named Ramesh:
+
+- Ramesh — Sabzi wala
+- Ramesh — Doodh wala
+
+If the shopkeeper says only "Ramesh", the application should not silently choose a customer.
+
+It should ask which Ramesh is intended.
+
+This is important because an accounting application must prioritize correctness over guessing.
+
+### Confirmation Before Saving
+
+A transcript is not a transaction.
+
+A proposed transaction is not a saved transaction.
+
+Ledgent separates recognition, interpretation, and confirmation so that an uncertain voice input does not automatically become a financial record.
+
+---
+
+## Technical Architecture
+
+Ledgent uses a lightweight frontend and a dedicated Node.js gateway to connect the browser with Gnani's voice services.
+
+```mermaid
+flowchart TB
+    subgraph CLIENT["Ledgent PWA"]
+        UI["Ledger Interface"]
+        MIC["Microphone Capture"]
+        AUDIO["AudioWorklet / PCM Processing"]
+        LANG["Language and Localization"]
+        PARSER["Transaction Understanding"]
+        DB["Local Ledger Storage"]
+    end
+
+    subgraph GATEWAY["Node.js Voice Gateway"]
+        SESSION["Session Management"]
+        WS["WebSocket Bridge"]
+        STT["Prisma Adapter"]
+        TTS["Timbre Adapter"]
+    end
+
+    subgraph GNANI["Gnani AI Voice Services"]
+        PRISMA["Prisma v3.0 — STT"]
+        TIMBRE["Timbre v3.0 — TTS"]
+    end
+
+    UI --> MIC
+    MIC --> AUDIO
+    AUDIO --> SESSION
+    SESSION --> WS
+    WS --> STT
+    STT <--> PRISMA
+    PRISMA --> PARSER
+    PARSER --> UI
+    LANG --> UI
+    UI --> DB
+    UI --> TTS
+    TTS --> TIMBRE
+    TIMBRE --> WS
+    WS --> UI
 ```
 
-Data that leaves the phone: microphone audio (to the gateway, then to Prisma) and
-the short text of a spoken reply (to Timbre). Customer records, balances and the
-ledger stay in the browser's IndexedDB; no LLM or external service receives them.
+### Technology Stack
 
-## 4. Setup — frontend and gateway
+| Component | Technology |
+|---|---|
+| Frontend | HTML, CSS, JavaScript ES Modules |
+| Application | Progressive Web App |
+| Backend | Node.js |
+| Real-time communication | WebSocket |
+| Speech recognition | Gnani Prisma v3.0 |
+| Speech generation | Gnani Timbre v3.0 |
+| Audio processing | Web Audio API, AudioWorklet |
+| Persistence | IndexedDB |
+| Integrity mechanisms | SHA-256 hash chaining |
+| Testing | Node.js tests, Playwright |
 
-Requirements: Node 20+ (tested on 24.11.1), a Chromium-based browser, a Gnani API
-key.
+The implementation avoids a heavy frontend framework and keeps the voice gateway separate from the browser application.
+
+---
+
+## Engineering Beyond the Demo
+
+We wanted Ledgent to be more than a visually convincing prototype.
+
+Several engineering decisions were made around real-world bookkeeping requirements.
+
+### 1. Language Consistency Across the Pipeline
+
+The selected locale is explicitly carried through the UI and gateway. The application exposes language trace information to help verify which locale was requested and used.
+
+### 2. Transcript Preservation
+
+Speech recognition and transaction interpretation are separate operations. If the transaction parser cannot understand a recognized sentence, Ledgent preserves the transcript instead of discarding it.
+
+### 3. Customer Disambiguation
+
+Similar customer names should trigger clarification rather than an arbitrary selection.
+
+### 4. Confirmation-First Accounting
+
+Transactions require explicit confirmation before they are recorded.
+
+### 5. Server-Side Voice Credentials
+
+Gnani API credentials are configured in the Node.js gateway rather than embedded in frontend JavaScript.
+
+### 6. Data Integrity
+
+The project incorporates integrity-oriented mechanisms such as integer-based monetary representation in paise, append-oriented transaction handling, duplicate-write protection, and SHA-256 hash chaining.
+
+Hash chaining helps make unauthorized modifications detectable under the intended verification model; it does not make a local ledger impossible to tamper with.
+
+---
+
+## Testing and Validation
+
+Ledgent includes automated checks for the application, transaction understanding, and voice integration.
+
+Validation work includes:
+
+- Transaction parsing and language-specific phrase tests.
+- Multilingual UI checks.
+- Locale propagation through the frontend and gateway.
+- WebSocket voice-gateway integration.
+- Prisma recognition round-trip tests.
+- Timbre response-language checks.
+- Browser microphone capture pipeline tests.
+- End-to-end application checks.
+
+The eight-language voice integration has been exercised using synthesized audio and automated test flows.
+
+**Important distinction:** Automated synthesized-audio validation does not establish real-world recognition accuracy for every language, accent, speaker, or noisy shop environment. Native-speaker and physical-device validation are still required.
+
+---
+
+## Running Ledgent Locally
+
+### Prerequisites
+
+- Node.js 20 or later.
+- npm.
+- A modern browser with microphone support.
+- Gnani Prisma v3.0 and Timbre v3.0 credentials.
+
+### 1. Clone the repository
 
 ```bash
-# 1. static app (no build step)
+git clone https://github.com/MudadlaPranay12/Ledgent.git
+cd Ledgent
+```
+
+### 2. Install frontend dependencies
+
+```bash
 npm install
-npm start                      # http://localhost:8199
-
-# 2. gateway
-cd gateway && npm install
-cp .env.example .env           # then put the real key in gateway/.env
-cd .. && npm run gateway       # http://localhost:8787
 ```
 
-`gateway/.env` is gitignored and is the only place the key may exist locally:
+### 3. Configure the voice gateway
 
-```
-GNANI_API_KEY=...
-ALLOWED_ORIGIN=http://localhost:8199
-GATEWAY_PORT=8787
-GNANI_TTS_VOICE=Shivani
-```
+Create the gateway environment file:
 
-Open `http://localhost:8199/?voice=gnani`. If the gateway is unreachable the app
-falls back to browser speech **with a loud "DEV VOICE" badge** — that fallback is
-a development convenience, never the production path.
-
-Useful URL flags: `?voice=mock` (scripted transcripts for demos/tests),
-`?voice=dev` (browser speech), `?lang=te-IN`, `?gw=https://gateway.example.com`
-(deployed gateway), `?format=codemix` (Prisma code-mix mode).
-
-## 5. Gnani Prisma v3.0 integration
-
-Verified against `docs.gnani.ai` and by live calls:
-
-| Item | Value |
-| --- | --- |
-| Endpoint | `wss://api.vachana.ai/stt/v3/stream` |
-| Auth header | `x-api-key-id` |
-| Model header | `model: prisma-v3.0` |
-| Language | `language_code: hi-IN` (exactly one locale; the API rejects a comma list — parallel locales need `multi_lang_codes`) |
-| Auto detect | `language_code: indic-auto` |
-| Audio | raw PCM, signed 16-bit LE, mono, 16 kHz |
-| Framing | exactly 1024-byte frames, ~32 ms cadence |
-| Modes | `format: transcribe` (default: numbers as digits) or `codemix` |
-| End of utterance | client sends `{"type":"commit"}` |
-| Server events | `connected`, `processing`, `transcript`, `error` |
-
-Browser side: `getUserMedia` with `noiseSuppression`, `echoCancellation`,
-`autoGainControl` → `AudioWorklet` (`js/pcm-worklet.js`) that resamples to 16 kHz
-with linear interpolation and emits 512 Int16 samples (1024 bytes) per message.
-The 48 kHz stream is never relabelled as 16 kHz.
-
-## 6. Gnani Timbre v3.0 integration
-
-| Item | Value |
-| --- | --- |
-| Endpoint | `wss://api.vachana.ai/api/v1/tts` |
-| Auth header | `X-API-Key-ID` |
-| Model | `model: timbre-v3.0` |
-| Voice | `Shivani` (female, from the v3.0 catalogue; configurable) |
-| Request | `{text, voice, model, language, speed, audio_config}` |
-| `audio_config` | `sample_rate: 16000, num_channels: 1, sample_width: 2, encoding: linear_pcm, container: raw` |
-| Responses | `start`, `audio` (base64 chunks, `is_final`), `complete`, `error` |
-
-Chunks are forwarded to the browser as they arrive and scheduled into a Web Audio
-buffer queue; playback starts on the first chunk instead of waiting for `complete`.
-Barge-in stops local sources and sends `tts_cancel`, which closes the upstream
-synthesis socket and drops queued utterances.
-
-Amounts are spoken as words before synthesis where the parser has a spoken form
-(e.g. ₹340 → "teen sau chaalis rupaye"); the readback also offers digit-by-digit
-confirmation ("teen-char-shunya rupaye, sahi?") when confidence is low.
-
-## 7. Gnani services used
-
-* Prisma v3.0 — streaming speech recognition (WebSocket).
-* Timbre v3.0 — streaming speech synthesis (WebSocket).
-* No voice cloning, no REST STT for the live microphone path.
-
-## 8. Actual language support (measured, not claimed)
-
-Prisma is asked for one language at a time, or `indic-auto`. The parser has
-lexicons for ten languages plus Hinglish/English mixing. "Tested" below means
-**automated parser tests**, except where real audio is named explicitly.
-
-Speech recognition and transaction parsing are separate concerns and are tested
-separately. `scripts/verify-languages.mjs` speaks a natural sentence with Timbre,
-streams that audio back through Prisma, and then asks the parser what it made of
-the transcript. Real output (`tests/language-evidence.json`):
-
-| Language | Audio received | Transcript | Explicit lang honoured | Auto (indic-auto) | Parsed | Transcript kept |
-| --- | --- | --- | --- | --- | --- | --- |
-| Hindi | yes (90 frames) | "रमेश का 340 रुपये उधार लिख दो।" | yes | hi-IN ✓ | transaction, ₹340 credit | yes |
-| English | yes (75) | "Give Suresh 300 rupees credit." | yes | en-IN ✓ | ₹300 credit, Suresh | yes |
-| Telugu | yes (65) | "గోపాల్ కి 300 రూపాయల అప్పు." | yes | te-IN ✓ | ₹300 credit, Gopal | yes |
-| Tamil | yes (68) | "ரமேஷுக்கு 300 ரூபாய் கடன்." | yes | ta-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
-| Kannada | yes (63) | "ರಮೇಶ್ ಗೆ 300 ರೂಪಾಯಿ ಸಾಲ." | yes | **kn-IN ✗** (heard Hindi) | ₹300 credit, Ramesh (ambiguous) | yes |
-| Malayalam | yes (65) | "രമേശിന് 300 രൂപ കടം." | yes | ml-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
-| Bengali | yes (55) | "রমেশের 300 টাকা বাকি।" | yes | bn-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
-| Marathi | yes (73) | "रमेशला 300 रुपये उधार." | yes | **mr-IN ✗** (heard Hindi) | ₹300 credit, Ramesh (ambiguous) | yes |
-
-"Ramesh (ambiguous)" is correct behaviour: the demo data has two shopkeepers
-named Ramesh, so Ledgent asks which one instead of picking.
-
-Two honest caveats about this table. First, the audio is **Timbre-synthesised**,
-not a human voice, so it is a development proxy and not native-speaker
-validation. Second, **`indic-auto` misidentified Kannada as Hindi** (the returned
-transcript was Devanagari and garbled) and reported Hindi for Marathi. Explicit
-language selection was correct for all eight, and that is what the UI uses unless
-the operator chooses AUTO.
-
-Punjabi and Malayalam lexicon entries are best-effort and marked `// unverified`
-in `js/lexicon/pa.js` and `ml.js`; they were not audio-tested here.
-
-### Microphone sessions are tested through the real capture path
-
-`scripts/mic-session-check.mjs` drives Chromium with a fake audio device
-(`--use-file-for-fake-audio-capture`), so the browser really calls
-`getUserMedia`, the AudioWorklet really resamples to 16 kHz PCM16, the frames
-travel over the gateway WebSocket, and Prisma really receives them. The audio
-*content* is Timbre-synthesised (no human recordings are available here); every
-other link is the production path.
-
-The UI now shows the language chain so a wrong language can never hide again:
-
-```
-Prisma suna   సురేష్ కి ... · te-IN
-UI te-IN  ·  WS→ te-IN  ·  Prisma ↺ te-IN
+```powershell
+Copy-Item gateway/.env.example gateway/.env
 ```
 
-The gateway echoes the language it actually requested back to the browser
-(`requested_language` on `connected` and on every `transcript`), and selecting a
-language is an explicit chooser rather than a cycling button — a stray click can
-no longer leave the app on Hindi while the operator believes Telugu is active.
+Add the required Gnani credentials and gateway configuration to `gateway/.env`, following the variable names in `.env.example`.
 
-Measured on this machine, one held-button session per language:
+Never commit API keys or credentials.
 
-| Selected | Gateway asked Prisma | Prisma returned | Transcript |
-| --- | --- | --- | --- |
-| te-IN | te-IN | te-IN | దానికి 340 రూపాయల అప్పు. |
-| hi-IN | hi-IN | hi-IN | 340 उधार। |
-| en-IN | en-IN | en-IN | 340 credit. |
-| ta-IN | ta-IN | ta-IN | சுரேஷுக்கு 340 கடன். |
-| kn-IN | kn-IN | kn-IN | ಸುರೇಶ್ ಗೆ 340 ಸಾಲ. |
-| ml-IN | ml-IN | ml-IN | സുരേഷിന് 340 കടം. |
-| bn-IN | bn-IN | bn-IN | সুরেশের 340 ধার। |
-| mr-IN | mr-IN | mr-IN | सुरेशला 340 उधार. |
+### 4. Install gateway dependencies
 
-All eight ended with a transcript in the expected script. The recogniser is not
-perfect on synthetic TTS audio (the Telugu clip lost the name "సురేష్" and heard
-"దానికి"); that is recognition quality, not a language-routing failure, and it is
-reported as-is.
-
-### One active language drives everything
-
-`S.lang` is the single source of truth. When the shopkeeper picks Telugu the
-microphone session opens Prisma with `language_code: te-IN`, the transcript is
-shown in Telugu script (never transliterated into Devanagari), all UI strings come
-from `js/i18n.js` (`అప్పు`, `చెల్లింపు`, `బాకీ`), and every spoken reply is sent to
-Timbre with `language: "te-IN"`. Internal values stay `'credit'`/`'payment'`; only
-`js/i18n.js` translates them.
-
-Timbre v3.0 language mapping was verified per language by synthesising a
-localized sentence and streaming that audio back through Prisma
-(`scripts/verify-tts-languages.mjs`): **8/8 returned transcripts in the expected
-script** — Telugu, Tamil, Kannada, Malayalam, Bengali, Devanagari (Hindi and
-Marathi) and Latin. The voice is `Shivani` for all of them; the `language` field
-is what changes.
-
-If Prisma returns a different language or a transcript in the wrong script, the
-transcript is still shown but flagged: *"Prisma ne hi-IN bheja, aapne te-IN chuna"*
-(localized), rather than pretending the recognition was correct.
-
-### Recognition is not parsing
-
-The transcript is a first-class result. `handleUtterance()` always stores the raw
-sentence (`S.rawTranscript`) and shows it in a `Prisma suna` line under the
-listening strip, plus the detected language. If the parser cannot turn it into a
-transaction, the UI keeps the transcript on screen and asks for the missing
-pieces ("Suna: \"…\". Kaunsa customer, kitna, udhaar ya payment?") with *Dobara
-boliye* and *Type karein* actions. It never replaces real words with a generic
-"Samajh nahi aaya". The parser works from tokens and numbers, not a phrase list:
-word order, code-mixing, glued Bengali hundreds ("তিনশো"), Indian amount words
-("dhai sau", "saade teen sau") and case endings on names ("Rameshinu",
-"ரமேஷுக்கு", "রমেশের", "रमेशला") are all handled.
-
-## 9. Run instructions (local and deployed)
-
-Local: section 4. HTTPS is required for microphone access in a deployed app.
-
-Frontend → Netlify (`netlify.toml`) or Vercel (`vercel.json`): publish the
-repository root, no build step. Then open the site with
-`?gw=https://<gateway-host>` once, or store the gateway URL in the browser.
-
-Gateway → Render (`render.yaml`) or Railway, native Node, no Docker:
-
-```bash
-cd gateway && npm install --omit=dev
-node server.js
+```powershell
+cd gateway
+npm install
 ```
 
-Set `GNANI_API_KEY` and `ALLOWED_ORIGIN=https://<your-static-site>` as service
-secrets, and `GATEWAY_PORT` if the platform requires it. Health check:
-`GET https://<gateway-host>/health` → `{"status":"ok","stt":"configured",...}`.
+### 5. Start the voice gateway
 
-**Deployment status: not deployed.** No hosting account or credentials were
-available in this environment, so the tunnel deploy check has not been run.
-
-## 10. Responsible AI and data handling
-
-* First turn: Ledgent says it is an AI, in the selected language (ten short
-  disclosures in `js/lang.js`, Hinglish as the fallback).
-* Synthetic demo customers only; the ledger lives on the device.
-* No raw audio and no transcripts are written to disk by the app or the gateway.
-  The gateway's usage counter stores counts and timings only.
-* Nothing is saved without confirmation; corrections preserve the original entry
-  as a reversal plus replacement event.
-* No lending, no collection pressure, no reminders in this voice build.
-* The API key never reaches the browser; `gateway/.env` is gitignored.
-
-## 11. Testing
-
-```bash
-npm test                 # 352 passed, 0 failed across 9 files
-npm run e2e              # Playwright, real Chromium, 8 checks + screenshots
-node scripts/gnani-smoke.mjs "Ramesh ka teen sau chaalis udhaar" hi-IN
-node scripts/gateway-live-check.mjs
-node scripts/stt-benchmark.mjs --langs hi-IN --limit 5
-node scripts/verify-languages.mjs                 # real audio, all 8 languages
-node scripts/verify-languages.mjs --langs ml-IN   # re-check one, keeps earlier rows
-node scripts/transcript-display-check.mjs         # Playwright: transcript survives a parse failure
-node scripts/language-ui-check.mjs                # Playwright: Telugu UI, labels, TTS tag
-node scripts/make-mic-fixture.mjs                 # build a WAV for the fake mic
-node scripts/mic-session-check.mjs te-IN tests/fixtures/te-mic.wav
-node scripts/verify-tts-languages.mjs             # real Timbre language round-trip, 8 languages
+```powershell
+npm start
 ```
 
-`npm test` exits non-zero **only** because `tests/run.mjs` is a 39-byte
-placeholder: the original 41-test suite was not recoverable from this folder (no
-git history existed before this work). Everything else passes. Screenshots land
-in `tests/artifacts/`.
+The gateway runs at:
 
-Tests use a fake upstream (`tests/gateway.test.mjs`), so unit tests never spend
-Gnani credits.
-
-## 12. Measured evidence and known limitations
-
-Real API runs (this machine, Node 24, November 2026):
-
-```
-Timbre v3.0 -> Prisma v3.0 loop
-voice: Shivani (timbre-v3.0)   language: hi-IN
-input text: Ramesh ka teen sau chaalis udhaar
-TTS ok: 27 chunks, 69120 bytes PCM16 @16k (2.16s audio)
-TTS request -> first audio chunk: 424 ms
-TTS request -> stream complete:   1574 ms
-STT ok: 1 transcript segment(s)
-  transcript: "रमेश का 340 उधार।"
-  detected_language_code: hi-IN   server latency: 101   audio_duration_ms: 2160
+```text
+http://localhost:8787
 ```
 
-```
-gateway GET /health -> {"status":"ok","stt":"configured","model":"prisma-v3.0",...}
-GET /session (foreign origin) -> 403
-GET /session (allowed origin) -> 200
-WS /voice -> open (token accepted) -> connected -> stt_ready
-real Prisma handshake through the gateway: OK (520 ms)
+Health endpoint:
+
+```text
+http://localhost:8787/health
 ```
 
-Hindi matrix, 5 categories (synthetic Timbre speech as input):
+### 6. Start the frontend
 
-```
-credit     "रमेश का 340 उधार।"          amount ✓  direction ✓  ambiguity flagged ✓
-payment    "सुरेश ने 500 रुपये दिए।"     amount ✓  direction ✓  customer ✓
-correction "नहीं, 430।"                 amount ✓  correction ✓
-query      "सुरेश का टोटल कितना है?"     query ✓   customer ✓
-ambiguity  "रमेश का 200 उधार।"          amount ✓  ambiguity flagged ✓
+Open another terminal at the project root:
 
-amount accuracy 4/4 · direction 4/4 · customer 2/3 · ambiguity 1/1 · 5 API calls
+```powershell
+npm start
 ```
 
-The one "customer miss" is two shopkeepers both named Ramesh in the demo data:
-the parser correctly refuses to pick one and asks. For that reason the matrix now
-expects ambiguity on bare "Ramesh" rows.
+Open:
 
-Not done / not verified:
+```text
+http://localhost:8080
+```
 
-* **No human voice has gone through the microphone.** The mic path itself is
-  exercised end-to-end (getUserMedia → AudioWorklet → gateway → Prisma) using a
-  WAV fed to Chromium's fake audio device, but that audio is Timbre-synthesised.
-  Recognition quality on real people, accents and shop noise is unmeasured.
-  Screenshots: `06-transcript-preserved.png`, `07-telugu-ui.png`,
-  `08-real-mic-telugu.png`.
-* **`indic-auto` is unreliable for Kannada and Marathi** in this test: it
-  misdetected Kannada as Hindi. Explicit language selection was correct for all
-  eight languages, so the default is an explicit choice.
-* **No real-voice latency p50/p95.** Only the numbers above were measured, and
-  headless runs are excluded by definition. Use `scripts/stt-benchmark.mjs` with a
-  real microphone and `tests/recorder.html` to collect 20+ runs.
-* **Telugu synthetic proxy failed on one word**: Timbre pronounced "migilindi" as
-  "मिलीलीटर" ("millilitre"), so the transcript contained a unit, not the balance
-  word. The parser handles the same sentence when the transcript is right
-  (`गोपाल का पैसा 300 मिगिलिंदी।` → balance question, never a guess), and it
-  strips the Devanagari danda that real transcripts end with.
-* Native number words exist for Hindi/English, a basic Telugu set and Bengali
-  hundreds; other languages rely on digits in the transcript.
-* **Non-Hindi UI translations were written by me, not reviewed by native
-  speakers.** They are understandable and tested for wiring, script and
-  consistency, but wording may be unnatural in places. The oversized-amount
-  guard warning in `js/guards.js` is still Hinglish.
-* Netlify/Vercel/Render deployment was not executed.
+Allow microphone access when prompted.
+
+Keep both the frontend and gateway running while testing voice interactions. The browser origin must be allowed by the gateway configuration.
+
+---
+
+## Project Roadmap
+
+| Feature | Status |
+|---|---|
+| Ledger-inspired interface | Complete |
+| Customer-specific ledger views | Complete |
+| Node.js voice gateway | Integrated |
+| Gnani Prisma v3.0 | Integrated |
+| Gnani Timbre v3.0 | Integrated |
+| Voice-driven transaction workflow | Implemented |
+| Transaction confirmation | Implemented |
+| Ambiguous customer clarification | Implemented |
+| Eight-language locale integration | Implemented |
+| Localized interface and spoken responses | Implemented |
+| Native-speaker validation across all languages | Planned |
+| Physical Android device testing | Planned |
+| Deployment and hosted demonstration | Planned |
+| Expanded usability testing with retailers | Planned |
+
+---
+
+## Why We Built It
+
+We believe access to technology should not depend on how comfortable someone is with typing, navigating complex applications, or using a particular language.
+
+For neighbourhood retailers, the khata is more than a notebook. It is part of their daily business workflow and their relationship with customers.
+
+Ledgent explores how real-time speech technology can make that workflow more accessible without abandoning what already works.
+
+Our goal is not to replace the shopkeeper's way of working.
+
+**Our goal is to make technology understand it.**
+
+---
+
+## Built For
+
+**Gnani Voice Hackathon**
+
+### Team Project: Ledgent
+
+**Your shop. Your language. Your ledger.**
+
+### Acknowledgements
+
+- Gnani AI — Prisma v3.0 and Timbre v3.0 voice technologies.
+- India's neighbourhood retailers, whose everyday workflows inspired this project.
+
+---
+
+## License
+
+No open-source license has been added yet. All rights remain with the repository owner unless a license is explicitly added.
