@@ -86,7 +86,9 @@ try {
   }));
 }
 
-await page.screenshot({ path: 'tests/artifacts/08-real-mic-telugu.png' });
+const shot = `tests/artifacts/08-real-mic-${wantLang}.png`;
+await page.screenshot({ path: shot });
+console.log(`screenshot: ${shot}`);
 console.log(JSON.stringify(result, null, 2));
 console.log(`page errors: ${errors.length ? errors.join('; ') : 'none'}`);
 
