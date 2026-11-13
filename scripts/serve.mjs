@@ -34,5 +34,5 @@ export function createStaticServer(root = ROOT) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createStaticServer().listen(PORT, () => console.log(`Ledgent: http://localhost:${PORT}`));
+  createStaticServer().listen(PORT, () => console.log(`Ledgent: http://localhost:${PORT} (pid ${process.pid})`));
 }
