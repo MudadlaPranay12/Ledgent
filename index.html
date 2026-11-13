@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#5a0c18">
+  <title>Ledgent — bolke khata</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header id="top">
+      <div class="brand">Ledgent <span class="ai-tag" title="AI assistant">AI</span></div>
+      <div class="tools">
+        <button id="verifyBtn" class="tool" type="button" aria-label="Verify book">
+          <span class="ico">✓</span><span class="lbl">Book verified</span>
+        </button>
+        <button id="remindersBtn" class="tool" type="button" aria-label="Reminders">
+          <span class="ico">🔔</span><span class="lbl">Reminders</span>
+        </button>
+        <button id="langBtn" class="tool" type="button" aria-label="Language">
+          <span class="ico">अ</span><span class="lbl" id="langLbl">हिं</span>
+        </button>
+        <button id="kbdBtn" class="tool" type="button" aria-label="Type instead">
+          <span class="ico">⌨</span><span class="lbl">Type</span>
+        </button>
+        <button id="dbgBtn" class="tool" type="button" aria-label="Debug">
+          <span class="ico">⏱</span><span class="lbl">Debug</span>
+        </button>
+      </div>
+    </header>
+
+    <div id="banner">
+      <span id="voiceBadge" class="badge">voice…</span>
+      <span id="bannerText">Main Ledgent hoon, ek AI sahayak. Dabaake boliye, main khata likhunga.</span>
+    </div>
+
+    <div id="status" data-state="idle" role="status" aria-live="polite">
+      <span class="dot"></span><span id="statusText">Listening · ready</span>
+    </div>
+
+    <nav id="tabs" aria-label="Customers"></nav>
+
+    <main id="book">
+      <section id="page">
+        <div class="page-head">
+          <div class="who"><h1 id="custName">—</h1><div id="custLabel"></div></div>
+          <div id="custBal"></div>
+        </div>
+        <ol id="lines"></ol>
+      </section>
+    </main>
+
+    <section id="heard" aria-live="polite">
+      <span id="heardText">Dabaake boliye · hold anywhere</span><span class="cursor"></span>
+    </section>
+
+    <section id="chips" aria-label="Examples">
+      <button class="chip-ex" type="button">Suresh ka 340 udhaar</button>
+      <button class="chip-ex" type="button">Ramesh ka 150 udhaar</button>
+      <button class="chip-ex" type="button">nahi, 430</button>
+      <button class="chip-ex" type="button">Suresh ka total</button>
+      <button class="chip-ex" type="button">din band</button>
+    </section>
+
+    <section id="draft" hidden>
+      <div id="draftText"></div>
+      <div id="choices"></div>
+      <div class="row">
+        <button id="cancelBtn" class="btn ghost" type="button">Cancel</button>
+        <button id="confirmBtn" class="btn primary" type="button">Confirm · Haan</button>
+      </div>
+    </section>
+
+    <form id="typeForm" hidden>
+      <input id="typeInput" autocomplete="off" placeholder="Type: Suresh ka 340 udhaar">
+      <button class="btn primary" type="submit">Send</button>
+    </form>
+
+    <section id="debug" hidden>
+      <div id="dbgLines"></div>
+      <div class="row">
+        <button id="tamperBtn" class="btn ghost small" type="button">Demo: tamper entry</button>
+        <button id="wipeBtn" class="btn ghost small" type="button">Clear all data</button>
+      </div>
+    </section>
+
+    <button id="holdBtn" type="button">
+      <span class="mic">🎙</span>
+      <span class="holdText">Hold to talk</span>
+      <span class="holdSub">release = speech ends</span>
+    </button>
+
+    <div id="toast" role="status"></div>
+  </div>
+
+  <div id="errorBox" hidden>
+    <h2>Ledgent could not start</h2>
+    <p id="errorText"></p>
+    <button id="resetBtn" class="btn primary" type="button">Reset app</button>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

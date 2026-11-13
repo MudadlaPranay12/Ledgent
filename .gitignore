@@ -1,0 +1,31 @@
+# See https://github.com/github/gitignore for more templates
+node_modules/
+/package-lock.json
+
+# Environment variables (never commit secrets)
+.env
+
+# Production build artifacts
+/dist/
+/build/
+
+# Service worker cache
+/.cache/
+
+# Runtime logs
+*.log
+
+# SQLite / DB files
+*.db
+
+# Upgrade notes
+# NOTE: To remove upgrader, run: npx ledgerctl upgrade
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store

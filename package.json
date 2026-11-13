@@ -1,0 +1,16 @@
+{
+  "name": "ledgent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/all.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "check": "npm test && npm run e2e",
+    "start": "node scripts/serve.mjs",
+    "phrases": "node tests/phrases.gen.mjs && node tests/phrases.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.0"
+  }
+}

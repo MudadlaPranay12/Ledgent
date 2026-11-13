@@ -1,0 +1,15 @@
+# render.yaml for Gateway Service
+services:
+  - type: web
+    name: ledgent-gateway
+    env: node
+    envVars:
+      GNANI_API_KEY: fromSecret: GNANI_API_KEY
+      ALLOWED_ORIGIN: fromSecret: ALLOWED_ORIGIN
+      GATEWAY_PORT: "3000"
+    plan: free
+    buildCommand: npm install
+    startCommand: node gateway/server.js
+    healthCheckPath: /health
+    # Auto-deploy on git push
+    # Dockerfile: gateway/Dockerfile

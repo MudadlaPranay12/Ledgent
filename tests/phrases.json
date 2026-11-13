@@ -1,0 +1,2271 @@
+{
+  "today": "2026-11-13",
+  "phrases": [
+    {
+      "input": "suresh ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 rupay udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 340 rupay udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 340 rupay udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 rupaye udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 340 rupaye udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 340 rupaye udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 3,400 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 340000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 3,400 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 340000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 3,400 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 340000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka teen sau chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka teen sau chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka teen sau chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka teen so chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka teen so chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka teen so chalis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka tin sau chalees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka tin sau chalees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka tin sau chalees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka tiin sau chaaliis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka tiin sau chaaliis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka tiin sau chaaliis udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka तीन सौ चालीस udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka तीन सौ चालीस udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka तीन सौ चालीस udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka तीन सौ 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka तीन सौ 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka तीन सौ 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 3 sau 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 3 sau 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 3 sau 40 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka three-forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka three-forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka three-forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka three forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka three forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka three forty udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka thirty four zero udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka thirty four zero udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka thirty four zero udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka pachhattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka pachhattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka pachhattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka pachattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka pachattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka pachattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 7500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka sattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka sattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 7000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka sattar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 7000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka nabbe udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 9000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka nabbe udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 9000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka nabbe udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 9000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka ek sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka ek sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka ek sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka do sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka do sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka do sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 50000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 50000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 50000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka ek hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka ek hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka ek hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 100000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka ek hazaar paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka ek hazaar paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka ek hazaar paanch sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka pandrah sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka pandrah sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka pandrah sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 150000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 1 hazaar 2 sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 120000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 1 hazaar 2 sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 120000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 1 hazaar 2 sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 120000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka do hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 200000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka do hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 200000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka do hazaar udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 200000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka dedh sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka dedh sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka dedh sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka dhai sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 25000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka dhai sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 25000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka dhai sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 25000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka saade teen sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 35000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka saade teen sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 35000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka saade teen sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 35000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka sava sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 12500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka sava sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 12500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka sava sau udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 12500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka chaar sau pachas udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 45000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka chaar sau pachas udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 45000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka chaar sau pachas udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 45000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 1,250 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 125000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 1,250 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 125000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 1,250 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 125000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka bees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 2000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka bees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 2000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka bees udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 2000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 99 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 9900,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 99 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 9900,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 99 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 9900,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 101 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 10100,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "meena ka 101 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 10100,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "gopal ka 101 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 10100,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 340 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 340 rupay diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 340 rupaye diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 3,400 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 340000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne teen sau chalis diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne teen so chalis diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne tin sau chalees diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne tiin sau chaaliis diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne तीन सौ चालीस diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne तीन सौ 40 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 3 sau 40 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne three-forty diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne three forty diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne thirty four zero diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne pachhattar diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7500,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne pachattar diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7500,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne sattar diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 7000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne nabbe diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 9000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश का 340 उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश को 200 दिया",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश ने 200 दिया",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "मीना का 100 उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "m1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "गोपाल का 100 उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "g1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश का तीन सौ चालीस उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश का सवा सौ उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 12500,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश का ढाई सौ उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 25000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "सुरेश का नब्बे उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 9000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "సురేష్ కి 340 అప్పు",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "సురేష్ కి ౩౪౦ అప్పు",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "సురేష్ కి 200 అప్పు",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ಸುರೇಶ್ ಗೆ 200 ಸಾಲ",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "সুরেশ কে 200 ধার",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "સુરેશ ને 200 ઉધાર",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "रमेश ka 150 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "రమేష్ కి 150 అప్పు",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 200 diye",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ko 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ko 200 diye",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh se 200 mila",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh se 200 mile",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ko 200 udhaar diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 200 jama kiye",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 200 baaki",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 200 likho",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 200 wapas diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh se 200 aaya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ko 200 diya udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ne 200 paid kiya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 200 udhaar hai",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka total",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "s1"
+      }
+    },
+    {
+      "input": "suresh ka total kitna",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "s1"
+      }
+    },
+    {
+      "input": "suresh ka hisab",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "s1"
+      }
+    },
+    {
+      "input": "suresh ka balance",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "s1"
+      }
+    },
+    {
+      "input": "suresh ka kitna baaki",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "s1"
+      }
+    },
+    {
+      "input": "meena ka total",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "m1"
+      }
+    },
+    {
+      "input": "gopal ka total",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "id": "g1"
+      }
+    },
+    {
+      "input": "aaj kitna udhaar gaya",
+      "expect": {
+        "intent": "query",
+        "kind": "today_credit"
+      }
+    },
+    {
+      "input": "aaj kitna udhaar diya",
+      "expect": {
+        "intent": "query",
+        "kind": "today_credit"
+      }
+    },
+    {
+      "input": "aaj kitna aaya",
+      "expect": {
+        "intent": "query",
+        "kind": "today_payment"
+      }
+    },
+    {
+      "input": "aaj kitna mila",
+      "expect": {
+        "intent": "query",
+        "kind": "today_payment"
+      }
+    },
+    {
+      "input": "aaj kitna jama hua",
+      "expect": {
+        "intent": "query",
+        "kind": "today_payment"
+      }
+    },
+    {
+      "input": "sabse zyada baaki kiska hai",
+      "expect": {
+        "intent": "query",
+        "kind": "max_owed"
+      }
+    },
+    {
+      "input": "sabse zyada baaki kaun",
+      "expect": {
+        "intent": "query",
+        "kind": "max_owed"
+      }
+    },
+    {
+      "input": "kitna udhaar aaj",
+      "expect": {
+        "intent": "query",
+        "kind": "today_credit"
+      }
+    },
+    {
+      "input": "ramesh ka total",
+      "expect": {
+        "intent": "query",
+        "kind": "customer_total",
+        "customer": "ambiguous"
+      }
+    },
+    {
+      "input": "nahi, 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "nahi 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "nahi, 340",
+      "expect": {
+        "intent": "correct",
+        "amount": 34000
+      }
+    },
+    {
+      "input": "galat 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "galat, 500",
+      "expect": {
+        "intent": "correct",
+        "amount": 50000
+      }
+    },
+    {
+      "input": "matlab 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "matlab, 340",
+      "expect": {
+        "intent": "correct",
+        "amount": 34000
+      }
+    },
+    {
+      "input": "sorry 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "no 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "wrong 430",
+      "expect": {
+        "intent": "correct",
+        "amount": 43000
+      }
+    },
+    {
+      "input": "nahi 1,250",
+      "expect": {
+        "intent": "correct",
+        "amount": 125000
+      }
+    },
+    {
+      "input": "correction 200",
+      "expect": {
+        "intent": "correct",
+        "amount": 20000
+      }
+    },
+    {
+      "input": "suresh ka aaj 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ka today 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ne kal 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-12",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh se kal 200 mila",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-12",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ne parso 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-11",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ka 10 tareekh ko 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-10",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ka 5 tareekh 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-05",
+        "dateUncertain": false
+      }
+    },
+    {
+      "input": "suresh ka kal 300 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 30000,
+        "type": "credit",
+        "date": null,
+        "dateUncertain": true
+      }
+    },
+    {
+      "input": "suresh ka parso 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 20000,
+        "type": "credit",
+        "date": null,
+        "dateUncertain": true
+      }
+    },
+    {
+      "input": "aaj 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "missing",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh ka 150 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh ko 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh ne 200 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 20000,
+        "type": "payment",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh bhaiya ka 150 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "रमेश का 100 उधार",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "రమేష్ కి 100 అప్పు",
+      "expect": {
+        "intent": "transaction",
+        "customer": "ambiguous",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "sabzi wale ramesh ka 200 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "r1",
+        "amount": 20000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "doodh wale ramesh ka 350 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "r2",
+        "amount": 35000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh sabzi ka 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "r1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "ramesh doodh ka 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "r2",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "um suresh ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "aaa suresh ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 udhaar bhaiya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh bhaiya ka 340 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka three four zero udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka teen char shunya udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 udhaar rupaye",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 rs udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 ₹ udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 udhaar ji",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "kishan ka 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "new",
+        "newName": "Kishan",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "bhavesh ka 250 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "new",
+        "newName": "Bhavesh",
+        "amount": 25000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "kishan ko 100 diya",
+      "expect": {
+        "intent": "transaction",
+        "customer": "new",
+        "newName": "Kishan",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 340 udhaar do sau",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "flags": [
+          "digit_word_mismatch"
+        ],
+        "level": "low"
+      }
+    },
+    {
+      "input": "suresh ka 3 sau chalis udhaar do sau",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "flags": [
+          "digit_word_mismatch"
+        ],
+        "level": "low"
+      }
+    },
+    {
+      "input": "suresh ka 340 udhaar teen sau chalees",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 34000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "level": "high"
+      }
+    },
+    {
+      "input": "suresh ka 9000 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 900000,
+        "type": "credit",
+        "date": "2026-11-13",
+        "flags": [
+          "outside_usual_range"
+        ]
+      }
+    },
+    {
+      "input": "haan",
+      "expect": {
+        "intent": "confirm"
+      }
+    },
+    {
+      "input": "haan ji",
+      "expect": {
+        "intent": "confirm"
+      }
+    },
+    {
+      "input": "theek hai",
+      "expect": {
+        "intent": "confirm"
+      }
+    },
+    {
+      "input": "sahi",
+      "expect": {
+        "intent": "confirm"
+      }
+    },
+    {
+      "input": "ok",
+      "expect": {
+        "intent": "confirm"
+      }
+    },
+    {
+      "input": "nahi",
+      "expect": {
+        "intent": "cancel"
+      }
+    },
+    {
+      "input": "cancel",
+      "expect": {
+        "intent": "cancel"
+      }
+    },
+    {
+      "input": "ruko",
+      "expect": {
+        "intent": "cancel"
+      }
+    },
+    {
+      "input": "suresh atta ka 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh chakki ka 100 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 10000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    },
+    {
+      "input": "suresh ka 150 udhaar",
+      "expect": {
+        "intent": "transaction",
+        "customer": "s1",
+        "amount": 15000,
+        "type": "credit",
+        "date": "2026-11-13"
+      }
+    }
+  ]
+}
