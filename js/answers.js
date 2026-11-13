@@ -1,34 +1,34 @@
-// Spoken answers built from the local ledger with fixed templates.
-// Pure: give it events + customers, it returns the sentence to speak.
+// Spoken answers built from the local ledger. Sentences are rendered in the
+// active language; the ledger itself only holds amounts and 'credit'/'payment'.
 import { balanceFor, sumFor } from './ledger.js';
+import { t } from './i18n.js';
 
 const rupees = (paise) => {
   const r = Math.abs(paise) / 100;
   return Number.isInteger(r) ? String(r) : String(Math.round(r * 100) / 100);
 };
 
-export function answerQuery(parsed, { customers = [], events = [], today }) {
+export function answerQuery(parsed, { customers = [], events = [], today, lang = 'hi-IN' } = {}) {
   const kind = parsed.kind;
+  const L = lang || 'hi-IN';
 
   if (kind === 'customer_total') {
     const id = parsed.id || (parsed.candidates && parsed.candidates[0]);
     const c = customers.find((x) => x.id === id);
-    if (!c) return { kind, text: 'Kiska total, yeh samajh nahi aaya.' };
+    if (!c) return { kind, text: t(L, 'ansUnknown') };
     const bal = balanceFor(events, c.id);
     const label = c.label ? ` (${c.label})` : '';
-    if (bal > 0) return { kind, text: `${c.name}${label} ka ${rupees(bal)} rupay baaki hai.` };
-    if (bal < 0) return { kind, text: `${c.name}${label} ka ${rupees(bal)} rupay humne zyada le liya hai.` };
-    return { kind, text: `${c.name}${label} ka hisab barabar hai, kuch baaki nahi.` };
+    if (bal > 0) return { kind, text: t(L, 'ansTotal', { name: c.name, label, amount: rupees(bal) }) };
+    if (bal < 0) return { kind, text: t(L, 'ansOverpaid', { name: c.name, label, amount: rupees(bal) }) };
+    return { kind, text: t(L, 'ansEven', { name: c.name, label }) };
   }
 
   if (kind === 'today_credit') {
-    const total = sumFor(events, today, 'credit');
-    return { kind, text: `Aaj ${rupees(total)} rupay ka udhaar gaya.` };
+    return { kind, text: t(L, 'ansTodayCredit', { amount: rupees(sumFor(events, today, 'credit')) }) };
   }
 
   if (kind === 'today_payment') {
-    const total = sumFor(events, today, 'payment');
-    return { kind, text: `Aaj ${rupees(total)} rupay aaya.` };
+    return { kind, text: t(L, 'ansTodayPayment', { amount: rupees(sumFor(events, today, 'payment')) }) };
   }
 
   if (kind === 'max_owed') {
@@ -37,9 +37,9 @@ export function answerQuery(parsed, { customers = [], events = [], today }) {
       const bal = balanceFor(events, c.id);
       if (bal > 0 && (!best || bal > best.bal)) best = { c, bal };
     }
-    if (!best) return { kind, text: 'Kisi ka bhi kuch baaki nahi hai.' };
-    return { kind, text: `Sabse zyada baaki ${best.c.name} ka hai, ${rupees(best.bal)} rupay.` };
+    if (!best) return { kind, text: t(L, 'ansNoOne') };
+    return { kind, text: t(L, 'ansMax', { name: best.c.name, amount: rupees(best.bal) }) };
   }
 
-  return { kind, text: 'Yeh sawaal samajh nahi aaya.' };
+  return { kind, text: t(L, 'ansUnknown') };
 }

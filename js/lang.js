@@ -18,18 +18,20 @@ export const LANGS = [
 
 // First-turn AI disclosure. Hinglish is the documented fallback, never a claim
 // that every language is native-speaker reviewed.
+// Written in each language's own script so the disclosure is readable by the
+// person using the app, not just transliterated into Latin letters.
 export const DISCLOSURE = {
-  'hi-IN': 'Main Ledgent hoon, ek AI sahayak. Aapki boli likhta hoon, save karne se pehle poochhta hoon.',
+  'hi-IN': 'मैं Ledgent हूँ, एक AI सहायक। आप जो बोलेंगे लिखूँगा और सहेजने से पहले पूछूँगा।',
   'en-IN': 'I am Ledgent, an AI assistant. I write what you say and ask before saving.',
-  'te-IN': 'Nenu Ledgent, oka AI sahayak. Meeru cheppinadi rasi, save cheyye mundu adugutaanu.',
-  'ta-IN': 'Naan Ledgent, oru AI udhavi. Neenga sonnathai ezhuthi, save seyya munnadi ketpen.',
-  'mr-IN': 'Mi Ledgent, ek AI sahayak. Tumhi mhanal te lihito ani save karanyapurvi vicharto.',
-  'bn-IN': 'Ami Ledgent, ek AI sahayak. Apni ja bolen ta likhi, save korar age jiggesh korbo.',
-  'gu-IN': 'Hu Ledgent chhu, ek AI sahayak. Tame bolo te lakhu chhu, save karta pehla puchhu chhu.',
-  'kn-IN': 'Naanu Ledgent, ondu AI sahayaka. Neenu heliddu bariyuttene, save maduva munna keluttane.',
-  'pa-IN': 'Main Ledgent haan, ek AI sahayak. Tussi bolde ho, main likhda haan, save karan ton pehla puchhda haan.',
-  'ml-IN': 'Njan Ledgent, oru AI sahayakan. Ningal parayunnathu ezhuthunnu, save cheyyunnathinu munpu chodikkum.',
-  auto: 'Main Ledgent hoon, ek AI sahayak. Save karne se pehle poochhta hoon.',
+  'te-IN': 'నేను Ledgent, ఒక AI సహాయకుడిని. మీరు చెప్పినది రాసి, సేవ్ చేయడానికి ముందు అడుగుతాను.',
+  'ta-IN': 'நான் Ledgent, ஒரு AI உதவியாளர். நீங்கள் சொல்வதை எழுதி, சேமிக்கும் முன் கேட்பேன்.',
+  'mr-IN': 'मी Ledgent, एक AI सहाय्यक. तुम्ही म्हणता ते लिहितो आणि जतन करण्यापूर्वी विचारतो.',
+  'bn-IN': 'আমি Ledgent, একটি AI সহায়ক। আপনি যা বলেন লিখি, সেভ করার আগে জিজ্ঞাসা করি।',
+  'gu-IN': 'હું Ledgent છું, એક AI સહાયક. તમે બોલો તે લખું છું, સેવ કરતાં પહેલાં પૂછું છું.',
+  'kn-IN': 'ನಾನು Ledgent, ಒಂದು AI ಸಹಾಯಕ. ನೀವು ಹೇಳಿದ್ದನ್ನು ಬರೆದು, ಉಳಿಸುವ ಮೊದಲು ಕೇಳುತ್ತೇನೆ.',
+  'pa-IN': 'ਮੈਂ Ledgent ਹਾਂ, ਇੱਕ AI ਸਹਾਇਕ। ਤੁਸੀਂ ਬੋਲੋਗੇ ਲਿਖਦਾ ਹਾਂ, ਸੇਵ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਪੁੱਛਦਾ ਹਾਂ।',
+  'ml-IN': 'ഞാൻ Ledgent, ഒരു AI സഹായി. നിങ്ങൾ പറയുന്നത് എഴുതി, സേവ് ചെയ്യുന്നതിന് മുൻപ് ചോദിക്കും.',
+  auto: 'मैं Ledgent हूँ, एक AI सहायक। सहेजने से पहले पूछूँगा।',
 };
 
 export const currentLang = () => CONFIG.lang || 'hi-IN';

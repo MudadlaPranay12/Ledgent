@@ -1,5 +1,7 @@
 // Session state machine: IDLE -> DRAFT -> (needs customer | needs type | needs date | ready) -> CONFIRMED
 // Pure logic apart from the ledger writes in confirmDraft/correctDraft.
+import { t, typeLabel } from './i18n.js';
+
 export const STATE = { IDLE: 'idle', DRAFT: 'draft', CONFIRMED: 'confirmed' };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -130,19 +132,21 @@ const rupees = (paise) => {
   return Number.isInteger(r) ? String(r) : String(Math.round(r * 100) / 100);
 };
 
-const typeWord = (t) => (t === 'payment' ? 'payment mila' : 'udhaar');
-
-export function generateReadback(draft, customers = []) {
+/**
+ * Read-back in the active language. `lang` only affects presentation: the draft
+ * still stores 'credit'/'payment', never a translated word.
+ */
+export function generateReadback(draft, customers = [], lang = 'hi-IN') {
   if (!draft) return null;
 
   if (draft.customerStatus === 'ambiguous') {
     return { type: 'ambiguousCustomer', candidates: draft.candidates || [] };
   }
   if (draft.customerStatus === 'new') {
-    return `Naya customer ${draft.newCustomerName || draft.customerName || ''}: ${rupees(draft.amountPaise)} rupay?`;
+    return t(lang, 'readbackNew', { name: draft.newCustomerName || draft.customerName || '', amount: rupees(draft.amountPaise) });
   }
   if (draft.customerStatus === 'missing') {
-    return 'Kiska hisab? Customer ka naam boliye.';
+    return t(lang, 'customerQ');
   }
 
   const c = customers.find((x) => x.id === draft.customerId);
@@ -151,9 +155,9 @@ export function generateReadback(draft, customers = []) {
   const amount = action.amountPaise ?? draft.amountPaise;
   const type = action.type ?? draft.type;
 
-  if (!type) return `${name}: ${rupees(amount)} rupay — udhaar ya payment?`;
-  const when = action.dateUncertain ? `${action.dateWord || 'kal'}?` : (action.occurredOn || todayStr());
-  return `${name}: ${rupees(amount)} rupay ${typeWord(type)} — ${when}.`;
+  if (!type) return t(lang, 'readbackNoType', { name, amount: rupees(amount) });
+  const when = action.dateUncertain ? `${action.dateWord || ''}?`.trim() : (action.occurredOn || todayStr());
+  return t(lang, 'readback', { name, amount: rupees(amount), type: typeLabel(lang, type), when });
 }
 
 // ==================================================================

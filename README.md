@@ -180,6 +180,26 @@ the operator chooses AUTO.
 Punjabi and Malayalam lexicon entries are best-effort and marked `// unverified`
 in `js/lexicon/pa.js` and `ml.js`; they were not audio-tested here.
 
+### One active language drives everything
+
+`S.lang` is the single source of truth. When the shopkeeper picks Telugu the
+microphone session opens Prisma with `language_code: te-IN`, the transcript is
+shown in Telugu script (never transliterated into Devanagari), all UI strings come
+from `js/i18n.js` (`అప్పు`, `చెల్లింపు`, `బాకీ`), and every spoken reply is sent to
+Timbre with `language: "te-IN"`. Internal values stay `'credit'`/`'payment'`; only
+`js/i18n.js` translates them.
+
+Timbre v3.0 language mapping was verified per language by synthesising a
+localized sentence and streaming that audio back through Prisma
+(`scripts/verify-tts-languages.mjs`): **8/8 returned transcripts in the expected
+script** — Telugu, Tamil, Kannada, Malayalam, Bengali, Devanagari (Hindi and
+Marathi) and Latin. The voice is `Shivani` for all of them; the `language` field
+is what changes.
+
+If Prisma returns a different language or a transcript in the wrong script, the
+transcript is still shown but flagged: *"Prisma ne hi-IN bheja, aapne te-IN chuna"*
+(localized), rather than pretending the recognition was correct.
+
 ### Recognition is not parsing
 
 The transcript is a first-class result. `handleUtterance()` always stores the raw
@@ -238,6 +258,8 @@ node scripts/stt-benchmark.mjs --langs hi-IN --limit 5
 node scripts/verify-languages.mjs                 # real audio, all 8 languages
 node scripts/verify-languages.mjs --langs ml-IN   # re-check one, keeps earlier rows
 node scripts/transcript-display-check.mjs         # Playwright: transcript survives a parse failure
+node scripts/language-ui-check.mjs                # Playwright: Telugu UI, labels, TTS tag
+node scripts/verify-tts-languages.mjs             # real Timbre language round-trip, 8 languages
 ```
 
 `npm test` exits non-zero **only** because `tests/run.mjs` is a 39-byte
@@ -307,6 +329,10 @@ Not done / not verified:
   word. The parser handles the same sentence when the transcript is right
   (`गोपाल का पैसा 300 मिगिलिंदी।` → balance question, never a guess), and it
   strips the Devanagari danda that real transcripts end with.
-* Native number words exist for Hindi/English and a basic Telugu set; other
-  languages rely on digits in the transcript.
+* Native number words exist for Hindi/English, a basic Telugu set and Bengali
+  hundreds; other languages rely on digits in the transcript.
+* **Non-Hindi UI translations were written by me, not reviewed by native
+  speakers.** They are understandable and tested for wiring, script and
+  consistency, but wording may be unnatural in places. The oversized-amount
+  guard warning in `js/guards.js` is still Hinglish.
 * Netlify/Vercel/Render deployment was not executed.

@@ -8,6 +8,7 @@ import { checkAllGuards } from './guards.js';
 import { answerQuery } from './answers.js';
 import { llmFallback, llmAvailable } from './llm.js';
 import { LANGS, chooseLang, disclosureFor, langLabel, nextLang } from './lang.js';
+import { EXAMPLES, t as tr, typeLabel, conjunction, todayWord, hasExpectedScript, scriptName } from './i18n.js';
 import { resolveVoice, speak, stopSpeaking, voiceErrorText } from './voice-router.js';
 import { digitsSpoken } from './numbers.js';
 
@@ -68,7 +69,7 @@ function showFatal(err) {
 // ---------------------------------------------------------------- heard strip
 // The recognised sentence is kept verbatim, independent of what the parser made
 // of it. A parse failure never erases it.
-function setRawTranscript(text, lang) {
+function setRawTranscript(text, lang, warn) {
   S.rawTranscript = String(text || '');
   S.rawTranscriptLang = lang || S.detectedLang || '';
   if (!els.heardRaw) return;
@@ -77,26 +78,33 @@ function setRawTranscript(text, lang) {
   els.heardRawText.textContent = S.rawTranscriptLang
     ? `${S.rawTranscript}  ·  ${S.rawTranscriptLang}`
     : S.rawTranscript;
+  if (warn) {
+    const span = document.createElement('span');
+    span.className = 'raw-warn';
+    span.textContent = ` ⚠ ${warn}`;
+    els.heardRawText.append(span);
+  }
 }
 
 /** Transcript arrived, meaning did not: show both, ask for the transaction. */
 function showUnparsed(transcript) {
+  const L = S.lang;
   setHeard(transcript);
   els.draft.hidden = false;
   els.draft.classList.add('question');
-  els.draftText.textContent = `Suna: "${transcript}". Kaunsa customer, kitna, udhaar ya payment?`;
+  els.draftText.textContent = tr(L, 'unparsedQ', { text: transcript });
   els.choices.innerHTML = '';
   const again = document.createElement('button');
   again.type = 'button';
-  again.textContent = 'Dobara boliye';
-  again.addEventListener('click', () => { els.draft.hidden = true; setStatus('idle', 'Listening · ready'); });
+  again.textContent = tr(L, 'optAgain');
+  again.addEventListener('click', () => { els.draft.hidden = true; setStatus('idle', tr(L, 'stIdle')); });
   const type = document.createElement('button');
   type.type = 'button';
-  type.textContent = 'Type karein';
+  type.textContent = tr(L, 'optType');
   type.addEventListener('click', () => { els.typeForm.hidden = false; els.typeInput.focus(); });
   els.choices.append(again, type);
-  setStatus('needs', 'Transcript mila — transaction clear nahi');
-  speakNow('Samajh nahi aaya. Customer, amount aur udhaar ya payment boliye.');
+  setStatus('needs', tr(L, 'stTranscript'));
+  speakNow(tr(L, 'unparsedQ', { text: transcript }));
 }
 
 function setHeard(text) {
@@ -124,7 +132,9 @@ function typeIntoHeard(text, speed = 16) {
 function speakNow(text, langOverride) {
   if (!text) return;
   S.lat.ttsAt = performance.now();
-  const lang = langOverride || S.detectedLang || S.lang;
+  // Explicit selection wins: Prisma's detected code must not silently switch
+  // the spoken language when the shopkeeper chose one.
+  const lang = langOverride || (S.lang === 'auto' ? (S.detectedLang || 'hi-IN') : S.lang);
   const engine = S.voice?.engine;
   if (engine && engine.speak) {
     Promise.resolve(engine.speak(text, lang)).then((ok) => {
@@ -234,9 +244,9 @@ function renderPage() {
   const bal = c ? balanceFor(S.events, c.id) : 0;
   els.custBal.innerHTML = '';
   const big = document.createElement('span');
-  big.textContent = `${rupees(bal)} baaki`;
+  big.textContent = `${rupees(bal)} ${tr(S.lang, 'balance')}`;
   const small = document.createElement('small');
-  small.textContent = c ? 'rupay' : '';
+  small.textContent = c ? tr(S.lang, 'rupay') : '';
   els.custBal.append(big, small);
 
   els.lines.innerHTML = '';
@@ -249,8 +259,7 @@ function renderPage() {
     const d = document.createElement('span'); d.className = 'd';
     d.textContent = a.occurredOn ? shortDate(a.occurredOn) : (a.dateWord || '?');
     const t = document.createElement('span'); t.className = 't';
-    const typeLabel = a.type === 'payment' ? 'payment mila' : a.type === 'credit' ? 'udhaar' : 'udhaar/payment?';
-    t.textContent = `${rupees(a.amountPaise || draft.amountPaise)} rupay ${typeLabel}`;
+    t.textContent = `${rupees(a.amountPaise || draft.amountPaise)} ${tr(S.lang, 'rupay')} ${typeLabel(S.lang, a.type)}`;
     const amt = document.createElement('span'); amt.className = 'a';
     amt.textContent = rupees(a.amountPaise || draft.amountPaise);
     li.append(d, t, amt);
@@ -260,7 +269,7 @@ function renderPage() {
   if (!c) {
     const li = document.createElement('li');
     li.className = 'more';
-    li.textContent = 'Koi customer nahi. Neeche se naam boliye.';
+    li.textContent = tr(S.lang, 'noCustomers');
     els.lines.append(li);
     return;
   }
@@ -271,7 +280,7 @@ function renderPage() {
     li.className = event.transaction_type + (status === 'reversed' ? ' reversed' : '');
     li.dataset.seq = String(event.seq);
     const d = document.createElement('span'); d.className = 'd'; d.textContent = shortDate(event.occurred_on);
-    const t = document.createElement('span'); t.className = 't'; t.textContent = event.transaction_type === 'credit' ? 'udhaar' : 'jama';
+    const t = document.createElement('span'); t.className = 't'; t.textContent = typeLabel(S.lang, event.transaction_type);
     const a = document.createElement('span'); a.className = 'a'; a.textContent = rupees(event.amount_paise);
     li.append(d, t, a);
     els.lines.append(li);
@@ -279,7 +288,7 @@ function renderPage() {
   if (!entries.length) {
     const li = document.createElement('li');
     li.className = 'more';
-    li.textContent = 'Naya khata — pehli entry boliye.';
+    li.textContent = tr(S.lang, 'newKhata');
     els.lines.append(li);
   }
 }
@@ -288,64 +297,65 @@ function draftQuestion() {
   const d = S.session.draft;
   if (!d) return { text: '', blocking: false, choices: [] };
   const a = d.actions?.[0] || {};
+  const L = S.lang;
 
   if (d.customerStatus === 'ambiguous') {
     const names = d.candidates.map((id) => labelOf(customerById(id)));
     return {
-      text: names.length === 2 ? `${names[0]} ya ${names[1]}?` : `${names.join(' ya ')}?`,
+      text: `${names.join(` ${conjunction(L)} `)}?`,
       blocking: true,
       choices: d.candidates.map((id) => ({ label: labelOf(customerById(id)), act: () => chooseCustomer(id) })),
     };
   }
   if (d.customerStatus === 'new') {
     return {
-      text: `Naya customer ${d.newCustomerName} banaun?`, blocking: true,
+      text: tr(L, 'newCustomerQ', { name: d.newCustomerName }), blocking: true,
       choices: [
-        { label: `Haan, ${d.newCustomerName} banao`, act: () => createNewCustomer() },
-        { label: 'Nahi', act: () => { S.session.draft = null; S.session.state = STATE.IDLE; renderAll(); setStatus('idle', 'Listening · ready'); } },
+        { label: tr(L, 'optNew', { name: d.newCustomerName }), act: () => createNewCustomer() },
+        { label: tr(L, 'optNo'), act: () => { S.session.draft = null; S.session.state = STATE.IDLE; renderAll(); setStatus('idle', tr(L, 'stIdle')); } },
       ],
     };
   }
   if (d.customerStatus === 'missing') {
-    return { text: 'Kiska hisab? Naam boliye ya Type dabaiye.', blocking: true, choices: [] };
+    return { text: tr(L, 'customerQ'), blocking: true, choices: [] };
   }
   if (d.balanceAmbiguous) {
     const name = d.customerName || 'Customer';
     const rs = rupees(a.amountPaise || d.amountPaise);
     return {
-      text: `${name} ka total \u20b9${rs} baaki hai, ya \u20b9${rs} ka naya udhaar likhun?`,
+      text: tr(L, 'balanceQ', { name, amount: rs }),
       blocking: true,
       choices: [
-        { label: 'Total baaki hai', act: () => showBalance(d.customerId) },
-        { label: 'Naya udhaar', act: () => { d.balanceAmbiguous = false; setType('credit'); } },
-        { label: 'Payment mila', act: () => { d.balanceAmbiguous = false; setType('payment'); } },
+        { label: tr(L, 'optBalance'), act: () => showBalance(d.customerId) },
+        { label: tr(L, 'optCredit'), act: () => { d.balanceAmbiguous = false; setType('credit'); } },
+        { label: tr(L, 'optPayment'), act: () => { d.balanceAmbiguous = false; setType('payment'); } },
       ],
     };
   }
   if (!a.type) {
     return {
-      text: 'Udhaar ya payment?', blocking: true,
+      text: tr(L, 'directionQ'), blocking: true,
       choices: [
-        { label: 'Udhaar', act: () => setType('credit') },
-        { label: 'Payment', act: () => setType('payment') },
+        { label: typeLabel(L, 'credit'), act: () => setType('credit') },
+        { label: typeLabel(L, 'payment'), act: () => setType('payment') },
       ],
     };
   }
   if (a.dateUncertain) {
     return {
-      text: `${a.dateWord || 'kal'} se matlab ${addDays(S.today, -1)}? Ya aaj?`, blocking: true,
+      text: tr(L, 'dateQ', { word: a.dateWord || '', date: shortDate(addDays(S.today, -1)) }), blocking: true,
       choices: [
-        { label: `Haan, ${shortDate(addDays(S.today, -1))}`, act: () => setDate(addDays(S.today, -1)) },
-        { label: 'Aaj', act: () => setDate(S.today) },
+        { label: `${tr(L, 'optYes')} · ${shortDate(addDays(S.today, -1))}`, act: () => setDate(addDays(S.today, -1)) },
+        { label: todayWord(L), act: () => setDate(S.today) },
       ],
     };
   }
   if (d.confidence && d.confidence.level === 'low') {
     return {
-      text: `${digitsSpoken(a.amountPaise || 0)} — sahi?`, blocking: true,
+      text: tr(L, 'lowAmountQ', { digits: digitsSpoken(a.amountPaise || 0) }), blocking: true,
       choices: [
-        { label: 'Haan, sahi', act: () => { S.session.draft.confidence.level = 'high'; renderAll(); } },
-        { label: 'Nahi', act: () => cancelDraft() },
+        { label: tr(L, 'optYes'), act: () => { S.session.draft.confidence.level = 'high'; renderAll(); } },
+        { label: tr(L, 'optNo'), act: () => cancelDraft() },
       ],
     };
   }
@@ -359,8 +369,8 @@ function renderDraft() {
   const q = draftQuestion();
   els.draft.classList.toggle('question', !!q.text);
 
-  let text = generateReadback(d, S.customers);
-  if (typeof text !== 'string') text = 'Naya entry';
+  let text = generateReadback(d, S.customers, S.lang);
+  if (typeof text !== 'string') text = tr(S.lang, 'readbackNew', { name: d.newCustomerName || '?', amount: rupees(d.amountPaise) });
   if (q.text) text = q.text;
   else if (S.flags.length) text = `${text} ${S.flags[0].message}`;
   els.draftText.textContent = text;
@@ -376,7 +386,7 @@ function renderDraft() {
   if (!q.blocking && S.flags.length) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = 'Haan, sahi hai';
+    b.textContent = tr(S.lang, 'optYes');
     b.addEventListener('click', () => { S.flags = []; renderAll(); });
     els.choices.append(b);
   }
@@ -390,7 +400,42 @@ function renderBadge() {
   els.badge.title = v.reason || '';
   els.bannerText.textContent = v.mode === 'dev'
     ? `${v.reason}. Browser speech is a development stand-in.`
-    : v.mode === 'gnani' ? 'Gnani voice active. Dabaake boliye.' : 'Dabaake boliye, main khata likhunga.';
+    : disclosureFor(S.lang);
+}
+
+// Static controls and example chips follow the active language too.
+function renderChrome() {
+  const L = S.lang;
+  els.confirmBtn.textContent = tr(L, 'confirm');
+  els.cancelBtn.textContent = tr(L, 'cancel');
+  const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
+  setText('#holdBtn .holdText', tr(L, 'hold'));
+  setText('#holdBtn .holdSub', tr(L, 'release'));
+  setText('#kbdBtn .lbl', tr(L, 'type'));
+  setText('#dbgBtn .lbl', tr(L, 'debugTxt'));
+  setText('#remindersBtn .lbl', tr(L, 'reminders'));
+  if (!els.heardText.textContent || /hold anywhere|Dabaake boliye/.test(els.heardText.textContent)) {
+    els.heardText.textContent = tr(L, 'hint');
+  }
+  els.typeInput.placeholder = `${tr(L, 'type')}: ${(EXAMPLES[L] || EXAMPLES['hi-IN'])[0]}`;
+  renderChips();
+}
+
+function renderChips() {
+  const list = EXAMPLES[S.lang] || EXAMPLES['hi-IN'];
+  els.chips.innerHTML = '';
+  for (const text of list) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip-ex';
+    b.textContent = text;
+    b.addEventListener('click', () => {
+      S.lat = { speechEnd: performance.now() };
+      if (S.lang === 'auto') S.detectedLang = null;
+      handleUtterance(text, 'chip');
+    });
+    els.chips.append(b);
+  }
 }
 
 function renderAll() {
@@ -398,6 +443,8 @@ function renderAll() {
   renderPage();
   renderDraft();
   els.langLbl.textContent = langLabel(S.lang);
+  renderChrome();
+  if (S.voice) renderBadge();
   renderDebug();
 }
 
@@ -436,9 +483,9 @@ async function chooseCustomer(id) {
   S.session.draft.candidates = [];
   S.activeCustomerId = id;
   S.flags = checkAllGuards(S.session.draft, S.customers, S.events, '');
-  const text = generateReadback(S.session.draft, S.customers);
+  const text = generateReadback(S.session.draft, S.customers, S.lang);
   typeIntoHeard(text);
-  setStatus('needs', 'Needs confirmation');
+  setStatus('needs', tr(S.lang, 'stNeeds'));
   speakNow(text);
 }
 
@@ -447,9 +494,9 @@ function setType(type) {
   S.session.draft.actions.forEach((a) => { a.type = type; });
   S.session.draft.type = type;
   S.session.draft.balanceAmbiguous = false;
-  const text = generateReadback(S.session.draft, S.customers);
+  const text = generateReadback(S.session.draft, S.customers, S.lang);
   typeIntoHeard(text);
-  setStatus('needs', 'Needs confirmation');
+  setStatus('needs', tr(S.lang, 'stNeeds'));
   speakNow(text);
 }
 
@@ -458,9 +505,9 @@ function setDate(date) {
   S.session.draft.actions.forEach((a) => { a.occurredOn = date; a.dateUncertain = false; a.dateWord = null; });
   S.session.draft.occurredOn = date;
   S.session.draft.dateUncertain = false;
-  const text = generateReadback(S.session.draft, S.customers);
+  const text = generateReadback(S.session.draft, S.customers, S.lang);
   typeIntoHeard(text);
-  setStatus('needs', 'Needs confirmation');
+  setStatus('needs', tr(S.lang, 'stNeeds'));
   speakNow(text);
 }
 
@@ -470,7 +517,7 @@ function showBalance(id) {
   if (!c) return;
   const ans = answerQuery(
     { intent: 'query', kind: 'customer_total', id, customer: { status: 'ok', id } },
-    { customers: S.customers, events: S.events, today: S.today },
+    { customers: S.customers, events: S.events, today: S.today, lang: S.lang },
   );
   S.session.draft = null;
   S.session.state = STATE.IDLE;
@@ -485,7 +532,7 @@ function showBalance(id) {
 async function createNewCustomer() {
   const d = S.session.draft;
   if (!d) return;
-  const name = d.newCustomerName || 'Naya';
+  const name = d.newCustomerName || '—';
   const c = await S.ledger.addCustomer({ id: `c_${Date.now().toString(36)}`, name, label: '', reminderOptIn: false });
   await refresh();
   d.customerStatus = 'ok';
@@ -493,9 +540,9 @@ async function createNewCustomer() {
   d.customerName = c.name;
   S.activeCustomerId = c.id;
   S.flags = checkAllGuards(d, S.customers, S.events, '');
-  const text = generateReadback(d, S.customers);
+  const text = generateReadback(d, S.customers, S.lang);
   typeIntoHeard(text);
-  setStatus('needs', 'Needs confirmation');
+  setStatus('needs', tr(S.lang, 'stNeeds'));
   speakNow(text);
 }
 
@@ -503,7 +550,7 @@ function cancelDraft() {
   resetDraft(S.session);
   S.flags = [];
   els.draft.hidden = true;
-  setStatus('idle', 'Listening · ready');
+  setStatus('idle', tr(S.lang, 'stIdle'));
   renderAll();
 }
 
@@ -518,12 +565,12 @@ async function confirmCurrent() {
   if (!d) { toast('Koi draft nahi'); return; }
   const q = draftQuestion();
   if (q.blocking) {
-    setStatus('needs', `Needs confirmation — ${q.text}`);
+    setStatus('needs', `${tr(S.lang, 'stNeeds')} — ${q.text}`);
     typeIntoHeard(q.text);
     speakNow(q.text);
     return;
   }
-  setStatus('thinking', 'Thinking…');
+  setStatus('thinking', tr(S.lang, 'stThink'));
   try {
     const res = await confirmDraft({ state: S.session.state, draft: d }, S.ledger);
     if (!res.event) {
@@ -540,11 +587,15 @@ async function confirmCurrent() {
     await refresh();
     renderAll();
     markWritten(res.event.seq);
-    const what = `${customerById(res.event.customer_id)?.name || 'Customer'}: ${rupees(res.event.amount_paise)} rupay ${res.event.transaction_type === 'credit' ? 'udhaar' : 'jama'}`;
-    setStatus('saved', `Saved · ${what}`);
-    els.heardText.textContent = `Saved — ${what}`;
+    const what = tr(S.lang, 'whatSaved', {
+      name: customerById(res.event.customer_id)?.name || 'Customer',
+      amount: rupees(res.event.amount_paise),
+      type: typeLabel(S.lang, res.event.transaction_type),
+    });
+    setStatus('saved', `${tr(S.lang, 'stSaved')} · ${what}`);
+    els.heardText.textContent = `${tr(S.lang, 'stSaved')} — ${what}`;
     setRawTranscript('', '');
-    speakNow(`Bachaya gaya. ${what}`);
+    speakNow(tr(S.lang, 'saved', { what }));
     if (res.duplicate) toast('Yeh entry pehle se saved thi');
   } catch (e) {
     setStatus('error', `Error: ${e.message}`);
@@ -555,12 +606,22 @@ async function confirmCurrent() {
 // ---------------------------------------------------------------- utterance routing
 async function handleUtterance(text, source = 'chip') {
   const t = String(text || '').trim();
-  if (!t) { setStatus('error', 'Error: No speech heard'); return; }
+  if (!t) { setStatus('error', `${tr(S.lang, 'stError')}: ${tr(S.lang, 'noSpeech')}`); return; }
 
   S.lat.transcriptAt = S.lat.transcriptAt || performance.now();
-  if (source === 'voice') setRawTranscript(t);
+  // Recognition sanity check: never pretend a wrong-script transcript matches
+  // the language the shopkeeper selected.
+  let warn = '';
+  if (source === 'voice' && S.lang !== 'auto') {
+    if (S.detectedLang && S.detectedLang !== S.lang) {
+      warn = tr(S.lang, 'warnLang', { got: S.detectedLang, want: S.lang });
+    } else if (!hasExpectedScript(S.lang, t)) {
+      warn = `${tr(S.lang, 'warnScript')} (${scriptName(S.lang)})`;
+    }
+  }
+  if (source === 'voice') setRawTranscript(t, S.detectedLang, warn);
   setHeard(t);
-  setStatus('thinking', 'Thinking…');
+  setStatus('thinking', tr(S.lang, 'stThink'));
 
   let parsed = parseUtterance(t, {
     customers: S.customers, today: S.today, activeDraft: S.session.draft,
@@ -591,9 +652,9 @@ async function route(parsed, text, source) {
       d.confidence = { score: 0.95, level: 'high', reasons: [] };
       S.flags = checkAllGuards(d, S.customers, S.events, text);
       renderAll();
-      typeIntoHeard(`Theek: ${rupees(amount)} rupay`);
-      setStatus('needs', 'Needs confirmation');
-      speakNow(`Theek, ${rupees(amount)} rupay. Confirm karein?`);
+      typeIntoHeard(tr(S.lang, 'corrected', { amount: rupees(amount) }));
+      setStatus('needs', tr(S.lang, 'stNeeds'));
+      speakNow(`${tr(S.lang, 'corrected', { amount: rupees(amount) })} ${tr(S.lang, 'optYes')}?`);
       return;
     }
     await correctLast(amount);
@@ -603,7 +664,7 @@ async function route(parsed, text, source) {
   if (parsed.intent === 'confirm') { await confirmCurrent(); return; }
 
   if (parsed.intent === 'cancel') {
-    if (d) { cancelDraft(); toast('Cancelled'); } else { setStatus('idle', 'Listening · ready'); }
+    if (d) { cancelDraft(); toast(tr(S.lang, 'cancelled')); } else { setStatus('idle', tr(S.lang, 'stIdle')); }
     return;
   }
 
@@ -611,9 +672,9 @@ async function route(parsed, text, source) {
   if (parsed.intent === 'choose_type' && d) { setType(parsed.type); return; }
 
   if (parsed.intent === 'query') {
-    const ans = answerQuery(parsed, { customers: S.customers, events: S.events, today: S.today });
+    const ans = answerQuery(parsed, { customers: S.customers, events: S.events, today: S.today, lang: S.lang });
     typeIntoHeard(ans.text);
-    setStatus('idle', `Listening · ${ans.text}`);
+    setStatus('idle', `${tr(S.lang, 'stIdle')} · ${ans.text}`);
     toast(ans.text, 5000);
     speakNow(ans.text);
     return;
@@ -621,21 +682,21 @@ async function route(parsed, text, source) {
 
   if (parsed.intent === 'transaction') {
     const built = startDraft(parsed, S.customers);
-    if (!built) { setStatus('error', 'Error: draft nahi bana'); return; }
+    if (!built) { setStatus('error', `${tr(S.lang, 'stError')}: ${tr(S.lang, 'noDraft')}`); return; }
     S.session.draft = built.draft;
     S.session.state = STATE.DRAFT;
     S.flags = checkAllGuards(built.draft, S.customers, S.events, text);
     renderAll();
     const q = draftQuestion();
     if (q.text) {
-      setStatus('needs', `Needs confirmation — ${q.text}`);
+      setStatus('needs', `${tr(S.lang, 'stNeeds')} — ${q.text}`);
       typeIntoHeard(q.text);
       speakNow(q.text);
     } else {
-      const rb = generateReadback(built.draft, S.customers);
-      setStatus('needs', 'Needs confirmation');
+      const rb = generateReadback(built.draft, S.customers, S.lang);
+      setStatus('needs', tr(S.lang, 'stNeeds'));
       typeIntoHeard(rb);
-      speakNow(`${rb} Confirm karein?`);
+      speakNow(`${rb} ${tr(S.lang, 'confirm')}?`);
     }
     return;
   }
@@ -647,11 +708,11 @@ async function route(parsed, text, source) {
 async function correctLast(amount) {
   const txn = S.lastTxnId || [...S.events].reverse().find((e) => e.event_type === 'transaction_posted')?.txn_id;
   if (!txn) {
-    setStatus('error', 'Error: koi entry nahi hai jo sudhar sake');
-    speakNow('Koi entry nahi hai');
+    setStatus('error', `${tr(S.lang, 'stError')}: ${tr(S.lang, 'noEntriesToFix')}`);
+    speakNow(tr(S.lang, 'noEntriesToFix'));
     return;
   }
-  setStatus('thinking', 'Thinking…');
+  setStatus('thinking', tr(S.lang, 'stThink'));
   try {
     const res = await correctDraft(txn, amount, S.ledger, `op_${Date.now()}`);
     S.lastTxnId = res.posted.txn_id;
@@ -659,27 +720,27 @@ async function correctLast(amount) {
     await refresh();
     renderAll();
     markWritten(res.posted.seq);
-    setStatus('saved', `Saved · corrected to ${rupees(amount)} rupay`);
-    typeIntoHeard(`Sahi kar diya: ${rupees(amount)} rupay`);
-    speakNow(`Sahi kar diya: ${rupees(amount)} rupay`);
+    setStatus('saved', `${tr(S.lang, 'stSaved')} · ${tr(S.lang, 'corrected', { amount: rupees(amount) })}`);
+    typeIntoHeard(tr(S.lang, 'corrected', { amount: rupees(amount) }));
+    speakNow(tr(S.lang, 'corrected', { amount: rupees(amount) }));
   } catch (e) {
     setStatus('error', `Error: ${e.message}`);
   }
 }
 
 async function doSeal() {
-  setStatus('thinking', 'Thinking…');
+  setStatus('thinking', tr(S.lang, 'stThink'));
   try {
     const { event, duplicate } = await S.ledger.sealDay(S.today);
     await refresh();
     const credit = sumFor(S.events, S.today, 'credit');
     const payment = sumFor(S.events, S.today, 'payment');
-    const summary = `Aaj udhaar ${rupees(credit)} rupay, jama ${rupees(payment)} rupay.`;
+    const summary = tr(S.lang, 'sealSummary', { credit: rupees(credit), payment: rupees(payment) });
     renderAll();
-    setStatus('saved', `Saved · din band${duplicate ? ' (already sealed)' : ''}`);
-    typeIntoHeard(`Din band. ${summary}`);
-    speakNow(`Din band. ${summary}`);
-    toast(`Din band · ${summary}`, 5000);
+    setStatus('saved', `${tr(S.lang, 'stSaved')} · ${summary}${duplicate ? ' (already sealed)' : ''}`);
+    typeIntoHeard(summary);
+    speakNow(summary);
+    toast(summary, 5000);
     void event;
   } catch (e) {
     setStatus('error', `Error: ${e.message}`);
@@ -740,8 +801,8 @@ function beginHold() {
     speakNow(line);
   }
   if (!S.voice || !S.voice.engine) {
-    setStatus('error', 'Voice not available in this browser');
-    toast('Voice not available in this browser — use Type', 4000);
+    setStatus('error', tr(S.lang, 'notAvailable'));
+    toast(`${tr(S.lang, 'notAvailable')} — ${tr(S.lang, 'type')}`, 4000);
     return;
   }
   S.holding = true;
@@ -749,7 +810,7 @@ function beginHold() {
   S.detectedLang = null;
   S.lat = { speechEnd: 0 };
   document.body.classList.add('listening');
-  setStatus('listening', 'Listening…');
+  setStatus('listening', tr(S.lang, 'stListen'));
   setHeard('');
   try { S.voice.engine.start(); } catch { S.holding = false; document.body.classList.remove('listening'); }
 }
@@ -759,7 +820,7 @@ function endHold() {
   S.holding = false;
   S.lat.speechEnd = performance.now();
   document.body.classList.remove('listening');
-  setStatus('thinking', 'Thinking…');
+  setStatus('thinking', tr(S.lang, 'stThink'));
   try { S.voice?.engine?.stop(); } catch { /* ignore */ }
 }
 
@@ -777,7 +838,7 @@ function initHold() {
 // ---------------------------------------------------------------- chrome handlers
 function initChrome() {
   els.confirmBtn.addEventListener('click', confirmCurrent);
-  els.cancelBtn.addEventListener('click', () => { cancelDraft(); toast('Cancelled'); });
+  els.cancelBtn.addEventListener('click', () => { cancelDraft(); toast(tr(S.lang, 'cancelled')); });
 
   els.typeForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -807,7 +868,9 @@ function initChrome() {
     els.langLbl.textContent = langLabel(S.lang);
     const name = LANGS.find((l) => l.code === S.lang)?.name || S.lang;
     toast(`Language: ${name}`, 2000);
-    speakNow(LANGS.find((l) => l.code === S.lang)?.name || '');
+    renderAll();
+    // The language name is spoken in its own language, e.g. "తెలుగు".
+    speakNow(name);
   });
 
   els.verifyBtn.addEventListener('click', async () => {
@@ -854,7 +917,7 @@ function initChrome() {
       els.verifyBtn.className = 'tool';
       els.verifyBtn.querySelector('.lbl').textContent = 'Book verified';
       renderAll();
-      setStatus('idle', 'Listening · ready');
+      setStatus('idle', tr(S.lang, 'stIdle'));
       toast('All data cleared, demo customers re-seeded');
     } catch (e) {
       setStatus('error', `Error: ${e.message}`);
@@ -871,18 +934,16 @@ function initChrome() {
     }
   });
 
-  for (const b of els.chips.querySelectorAll('.chip-ex')) {
-    b.addEventListener('click', () => {
-      S.lat = { speechEnd: performance.now() };
-      handleUtterance(b.textContent, 'chip');
-    });
-  }
+  // Chips are (re)built per language by renderChips(); they carry their own
+  // listeners, so no binding happens here.
 }
 
 function showReminders() {
   const opted = S.customers.filter((c) => c.reminderOptIn === true && Math.abs(balanceFor(S.events, c.id)) > 0);
-  if (!opted.length) { toast('Koi customer opt-in nahi hai ya balance zero hai', 4000); return; }
-  const text = opted.map((c) => `Namaste ${c.name} ji, aapka Rs ${rupees(balanceFor(S.events, c.id))} ka hisab baaki hai.`).join(' ');
+  if (!opted.length) { toast(tr(S.lang, 'ansNoOne'), 4000); return; }
+  const text = opted
+    .map((c) => tr(S.lang, 'reminderLine', { name: c.name, amount: rupees(balanceFor(S.events, c.id)) }))
+    .join(' ');
   typeIntoHeard(text);
   speakNow(text);
   toast(text, 8000);
@@ -903,7 +964,7 @@ async function init() {
   S.activeCustomerId = S.customers[0]?.id || null;
 
   renderAll();
-  setStatus('idle', 'Listening · ready');
+  setStatus('idle', tr(S.lang, 'stIdle'));
   initChrome();
   initHold();
 

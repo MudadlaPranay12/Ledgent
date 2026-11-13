@@ -3,6 +3,9 @@
 import assert from 'node:assert/strict';
 import { parseUtterance } from '../js/parser.js';
 import { LANGS, DISCLOSURE } from '../js/lang.js';
+import { t, typeLabel, EXAMPLES, UI_LANGS, hasExpectedScript } from '../js/i18n.js';
+import { generateReadback } from '../js/session.js';
+import { answerQuery } from '../js/answers.js';
 
 let pass = 0;
 const ok = (name, fn) => { fn(); pass += 1; console.log(`  ok ${pass} - ${name}`); };
@@ -146,6 +149,53 @@ ok('a real transcript survives even when the transaction does not parse', () => 
   assert.equal(p.intent, 'unknown');
   assert.equal(p.raw, text, 'raw transcript kept verbatim');
   assert.ok(p.normalized.length > 0);
+});
+
+ok('every target language has presentation strings', () => {
+  const targets = ['hi-IN', 'en-IN', 'te-IN', 'ta-IN', 'kn-IN', 'ml-IN', 'bn-IN', 'mr-IN'];
+  for (const lang of targets) {
+    assert.ok(UI_LANGS.includes(lang), `missing dict for ${lang}`);
+    for (const key of ['credit', 'payment', 'balance', 'directionQ', 'customerQ', 'unparsedQ', 'readback', 'ansTotal']) {
+      const value = t(lang, key);
+      assert.equal(typeof value, 'string', `${lang} missing ${key}`);
+      assert.ok(value.length > 0, `${lang} empty ${key}`);
+    }
+    assert.ok(EXAMPLES[lang]?.length >= 3, `${lang} examples`);
+  }
+});
+
+ok('non-Hindi languages do not fall back to the Hindi label', () => {
+  for (const lang of ['te-IN', 'ta-IN', 'kn-IN', 'ml-IN', 'bn-IN']) {
+    assert.notEqual(typeLabel(lang, 'credit'), 'udhaar', `${lang} credit`);
+    assert.ok(/[^\x00-\x7F]/.test(typeLabel(lang, 'payment')), `${lang} payment script`);
+  }
+});
+
+ok('canonical transaction values stay language-independent', () => {
+  const draft = {
+    customerStatus: 'ok', customerId: 's1', customerName: 'Suresh',
+    actions: [{ type: 'payment', amountPaise: 30000, occurredOn: '2026-03-10' }],
+    amountPaise: 30000, type: 'payment',
+  };
+  const te = generateReadback(draft, [{ id: 's1', name: 'Suresh', label: '' }], 'te-IN');
+  assert.equal(draft.actions[0].type, 'payment', 'stored type unchanged');
+  assert.match(te, /చెల్లింపు/);
+  assert.equal(generateReadback(draft, [], 'hi-IN').includes('payment'), false);
+});
+
+ok('answers render in the requested language', () => {
+  const events = [];
+  const customers = [{ id: 's1', name: 'Suresh', label: '' }];
+  const te = answerQuery({ kind: 'today_credit' }, { customers, events, today: '2026-03-10', lang: 'te-IN' });
+  assert.match(te.text, /రూపాయల/);
+  const en = answerQuery({ kind: 'today_credit' }, { customers, events, today: '2026-03-10', lang: 'en-IN' });
+  assert.match(en.text, /credit/i);
+});
+
+ok('script expectation rejects a mismatched transcript', () => {
+  assert.equal(hasExpectedScript('te-IN', 'సురేష్ కి 340 అప్పు'), true);
+  assert.equal(hasExpectedScript('te-IN', 'रमेश का 340 उधार'), false);
+  assert.equal(hasExpectedScript('ml-IN', 'Ramesh 300 kadam'), true, 'roman code-mixing allowed');
 });
 
 ok('Punjabi and Malayalam scripts transliterate to Roman keys', async () => {
