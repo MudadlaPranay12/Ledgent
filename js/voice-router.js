@@ -3,7 +3,7 @@
 // DEV browser speech, with a visible reason why Gnani was not used.
 import { CONFIG, VOICE } from './config.js';
 import { DevVoice, speak, stopSpeaking, voiceSupported, voiceErrorText } from './voice.js';
-import { GnaniVoice, probeGateway } from './voice-gnani.js';
+import { GatewayVoice, probeGateway } from './voice-gnani.js';
 
 export const LOG = { mode: 'dev', reason: '', badge: '' };
 
@@ -45,22 +45,53 @@ class MockVoice {
   }
 }
 
+/** Adds the speak/stopSpeaking contract to the browser-speech engine. */
+function withSpeech(engine) {
+  return {
+    start: () => engine.start(),
+    stop: () => engine.stop(),
+    setLang: (l) => { engine.lang = l; },
+    speak: (text, lang) => new Promise((resolve) => {
+      if (!text) return resolve(false);
+      const ok = speak(text, lang, () => resolve(true));
+      if (!ok) return resolve(false);
+      // Safety net so a hung utterance never blocks the UI. It is not used for
+      // any latency measurement — only speechSynthesis onstart is.
+      setTimeout(() => resolve(false), 2000);
+    }),
+    stopSpeaking,
+  };
+}
+
+function withGateway(engine) {
+  return {
+    start: () => engine.start(),
+    stop: () => engine.stop(),
+    setLang: (l) => { engine.lang = l; },
+    speak: (text, lang) => engine.speak(text, lang),
+    stopSpeaking: () => engine.stopSpeaking(),
+  };
+}
+
 /**
- * @returns {{mode:string, reason:string, badge:string, engine:object, setLang:(l:string)=>void}}
+ * @returns {{mode:string, reason:string, badge:string, engine:object|null, setLang:Function}}
  */
-export async function resolveVoice({ onPartial, onFinal, onError, lang }) {
+export async function resolveVoice({ onPartial, onFinal, onError, onDetected, onFirstAudio, lang }) {
   const wants = VOICE; // 'dev' | 'gnani' | 'mock'
 
   if (wants === 'mock') {
     Object.assign(LOG, { mode: 'mock', reason: 'Scripted demo voice (?voice=mock)', badge: 'DEMO VOICE: scripted phrases' });
-    return finalise(LOG, { engine: new MockVoice({ onPartial, onFinal, lang }) });
+    return finalise(LOG, { engine: withSpeech(new MockVoice({ onPartial, onFinal, lang })) });
   }
 
   if (wants !== 'dev' && CONFIG.gatewayUrl) {
     const health = await probeGateway(CONFIG.gatewayUrl, CONFIG.healthTimeoutMs);
     if (health.ok) {
       Object.assign(LOG, { mode: 'gnani', reason: health.reason, badge: 'GNANI VOICE' });
-      return finalise(LOG, { engine: new GnaniVoice({ onPartial, onFinal, onError, lang, baseUrl: CONFIG.gatewayUrl }) });
+      const engine = new GatewayVoice({
+        baseUrl: CONFIG.gatewayUrl, onPartial, onFinal, onError, onDetected, onFirstAudio, lang,
+      });
+      return finalise(LOG, { engine: withGateway(engine) });
     }
     Object.assign(LOG, { mode: 'dev', reason: health.reason, badge: 'DEV VOICE: browser speech, not Gnani' });
   } else {
@@ -75,13 +106,13 @@ export async function resolveVoice({ onPartial, onFinal, onError, lang }) {
     Object.assign(LOG, { mode: 'none', reason: 'Voice not available in this browser', badge: 'VOICE NOT AVAILABLE' });
     return finalise(LOG, { engine: null });
   }
-  return finalise(LOG, { engine: new DevVoice({ onPartial, onFinal, onError, lang }) });
+  return finalise(LOG, { engine: withSpeech(new DevVoice({ onPartial, onFinal, onError, lang })) });
 }
 
 function finalise(log, { engine }) {
-  let current = { ...log, engine };
+  const current = { ...log, engine };
   current.setLang = (l) => {
-    if (engine) engine.lang = l;
+    if (engine?.setLang) engine.setLang(l);
     current.lang = l;
   };
   return current;

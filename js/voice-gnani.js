@@ -1,25 +1,22 @@
-// Gnani gateway adapter (Prisma v3.0 STT / Timbre v3.0 TTS).
-// Speaks the same interface as js/voice.js:
-//   new GnaniVoice({onPartial,onFinal,onError,lang}); start(); stop();
-// It is only used when the gateway is configured AND GET /health answers.
-// Protocol (gateway/server.js):
-//   GET  /session           -> { token, expires }
-//   WS   /voice?token=...   -> origin-checked, single-use token
-//   send {type:'start', lang, mode}
-//   send binary PCM16 @16k  (we stream mic audio when permitted)
-//   send {type:'finish'}    -> server replies {type:'partial'|'final', text}
-// TTS stays on the device (speechSynthesis); this class never logs transcripts.
+// Real Gnani voice client: microphone -> gateway (which holds the API key) ->
+// Prisma v3.0 STT, and answer text -> Timbre v3.0 TTS streamed back as PCM.
+// The browser never sees the key, and no audio or transcript is stored.
+import { MicCapture } from './audio-capture.js';
+import { CONFIG } from './config.js';
 
-export async function probeGateway(baseUrl, timeoutMs = 900) {
+const TTS_RATE = 16000;
+
+export async function probeGateway(baseUrl, timeoutMs = 1200) {
   if (!baseUrl) return { ok: false, reason: 'No gateway URL configured' };
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(`${baseUrl}/health`, { signal: ctrl.signal, cache: 'no-store' });
     if (!res.ok) return { ok: false, reason: `Gateway /health returned ${res.status}` };
-    const json = await res.json().catch(() => ({}));
-    if (json && json.status && json.status !== 'ok') return { ok: false, reason: `Gateway not healthy: ${json.status}` };
-    return { ok: true, reason: 'Gnani gateway healthy' };
+    const json = await res.json();
+    if (json.status !== 'ok') return { ok: false, reason: `Gateway unhealthy: ${json.status}` };
+    if (json.stt === 'missing_key') return { ok: false, reason: 'Gateway has no GNANI_API_KEY' };
+    return { ok: true, reason: 'Gnani gateway healthy', health: json };
   } catch (e) {
     return { ok: false, reason: e?.name === 'AbortError' ? 'Gateway /health timed out' : 'Gateway unreachable' };
   } finally {
@@ -29,78 +26,160 @@ export async function probeGateway(baseUrl, timeoutMs = 900) {
 
 const wsUrl = (base) => base.replace(/^http/, 'ws');
 
-export class GnaniVoice {
-  constructor({ onPartial, onFinal, onError, lang = 'hi-IN', baseUrl }) {
-    Object.assign(this, { onPartial, onFinal, onError, lang, baseUrl, ws: null, ctx: null, stream: null, node: null, active: false });
+export class GatewayVoice {
+  constructor({ baseUrl, lang = 'hi-IN', onPartial, onFinal, onError, onDetected, onFirstAudio } = {}) {
+    Object.assign(this, { baseUrl, lang, onPartial, onFinal, onError, onDetected, onFirstAudio });
+    this.ws = null;
+    this.mic = null;
+    this.active = false;
+    this.ready = false;
+    this.ttsCtx = null;
+    this.playhead = 0;
+    this.sources = new Set();
+    this.ttsId = 0;
+    this.audioReported = false;
+  }
+
+  async _socket() {
+    if (this.ws && this.ws.readyState === 1) return this.ws;
+    const res = await fetch(`${this.baseUrl}/session`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status === 429 ? 'rate_limited' : 'session_failed');
+    const { token } = await res.json();
+    const ws = new WebSocket(`${wsUrl(this.baseUrl)}/voice?token=${encodeURIComponent(token)}`);
+    this.ws = ws;
+    ws.onmessage = (ev) => this._onMessage(ev);
+    ws.onerror = () => this.onError?.('network');
+    ws.onclose = () => { this.ready = false; };
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('ws_timeout')), 4000);
+      ws.addEventListener('open', () => { clearTimeout(t); resolve(); }, { once: true });
+      ws.addEventListener('error', () => { clearTimeout(t); reject(new Error('ws_failed')); }, { once: true });
+    });
+    return ws;
+  }
+
+  _onMessage(ev) {
+    if (typeof ev.data !== 'string') return;
+    let msg; try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.type === 'connected') { this.ready = true; return; }
+    if (msg.type === 'processing') return;
+    if (msg.type === 'transcript') {
+      if (msg.detected_language_code) this.onDetected?.(msg.detected_language_code);
+      this.onFinal?.(msg.text || '', { detected: msg.detected_language_code, latencyMs: msg.latency_ms });
+      return;
+    }
+    if (msg.type === 'error') { this.onError?.(msg.where === 'tts' ? 'tts_unavailable' : (msg.message || 'voice_error')); return; }
+    if (msg.type === 'stt_closed') { this.ready = false; return; }
+    if (msg.type === 'tts_start') return;
+    if (msg.type === 'tts_audio') { this._playChunk(msg.audio); return; }
   }
 
   async start() {
+    this.stopMicOnly();
     this.active = true;
     try {
-      const s = await fetch(`${this.baseUrl}/session`, { cache: 'no-store' });
-      if (!s.ok) throw new Error('session');
-      const { token } = await s.json();
-      const ws = new WebSocket(`${wsUrl(this.baseUrl)}/voice?token=${encodeURIComponent(token)}`);
-      this.ws = ws;
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'start', lang: this.lang, mode: 'codemix' }));
-        this._startMic();
-      };
-      ws.onmessage = (ev) => {
-        if (typeof ev.data !== 'string') return;
-        let msg;
-        try { msg = JSON.parse(ev.data); } catch { return; }
-        if (msg.type === 'partial') this.onPartial?.(msg.text || '');
-        if (msg.type === 'final') { this.active = false; this.onFinal?.(msg.text || ''); this._close(); }
-        if (msg.type === 'error') { this.onError?.(msg.error || 'gateway'); this._close(); }
-      };
-      ws.onerror = () => this.onError?.('network');
-      ws.onclose = () => { if (this.active) this.onError?.('network'); };
-    } catch {
-      this.onError?.('network');
-      this._close();
+      const ws = await this._socket();
+      ws.send(JSON.stringify({ type: 'start', lang: this.lang, format: CONFIG.sttFormat }));
+      this.mic = new MicCapture({
+        onFrame: (bytes) => {
+          if (!this.active) return;
+          const sock = this.ws;
+          if (sock && sock.readyState === 1) sock.send(bytes.buffer);
+        },
+        onError: (code) => { this.active = false; this.onError?.(code); },
+      });
+      const ok = await this.mic.start();
+      if (!ok) { this.active = false; return false; }
+      return true;
+    } catch (e) {
+      this.active = false;
+      this.onError?.(e.message === 'rate_limited' ? 'rate_limited' : 'network');
+      return false;
     }
   }
 
-  async _startMic() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.stream = stream;
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new Ctx({ sampleRate: 16000 });
-      const source = this.ctx.createMediaStreamSource(stream);
-      this.node = this.ctx.createScriptProcessor(4096, 1, 1);
-      this.node.onaudioprocess = (e) => {
-        if (!this.active || !this.ws || this.ws.readyState !== 1) return;
-        const data = e.inputBuffer.getChannelData(0);
-        const pcm = new Int16Array(data.length);
-        for (let i = 0; i < data.length; i++) pcm[i] = Math.max(-1, Math.min(1, data[i])) * 0x7fff;
-        this.ws.send(pcm.buffer);
-      };
-      source.connect(this.node);
-      this.node.connect(this.ctx.destination);
-    } catch {
-      this.onError?.('not-allowed');
-    }
-  }
-
-  /** Hard end of speech: stop capturing, tell the gateway to finalise. */
+  /** Release of the button/screen: hard end of speech. */
   stop() {
     this.active = false;
-    try { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ type: 'finish' })); } catch { /* closed */ }
-    this._stopMic();
+    this.stopMicOnly();
+    const ws = this.ws;
+    if (ws && ws.readyState === 1) {
+      try { ws.send(JSON.stringify({ type: 'stop' })); } catch { /* closed */ }
+    }
   }
 
-  _stopMic() {
-    try { this.node?.disconnect(); } catch { /* ignore */ }
-    try { this.stream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
-    this.node = null; this.stream = null;
-    if (this.ctx) { try { this.ctx.close(); } catch { /* ignore */ } this.ctx = null; }
+  stopMicOnly() {
+    try { this.mic?.stop(); } catch { /* ignore */ }
+    this.mic = null;
   }
 
-  _close() {
-    this._stopMic();
-    try { this.ws?.close(); } catch { /* ignore */ }
-    this.ws = null;
+  // ---------------- TTS ----------------
+  _ensureTtsCtx() {
+    if (!this.ttsCtx || this.ttsCtx.state === 'closed') {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      this.ttsCtx = new Ctx();
+      this.playhead = 0;
+    }
+    if (this.ttsCtx.state === 'suspended') this.ttsCtx.resume().catch(() => {});
+    return this.ttsCtx;
   }
+
+  /** Speak through Gnani Timbre v3.0; resolves on first scheduled audio chunk. */
+  speak(text, lang = this.lang) {
+    const ws = this.ws;
+    if (!text || !ws || ws.readyState !== 1) return Promise.resolve(false);
+    this.ttsId += 1;
+    this.audioReported = false;
+    return new Promise((resolve) => {
+      let resolved = false;
+      const done = (v) => { if (!resolved) { resolved = true; resolve(v); } };
+      setTimeout(() => done(false), 4000);
+      const onFirst = () => {
+        if (!this.audioReported) {
+          this.audioReported = true;
+          this.onFirstAudio?.();
+          done(true);
+        }
+      };
+      this._onFirstAudio = onFirst;
+      ws.send(JSON.stringify({ type: 'tts', id: this.ttsId, text, lang }));
+    });
+  }
+
+  _playChunk(b64) {
+    if (!b64) return;
+    const ctx = this._ensureTtsCtx();
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const samples = new Int16Array(bytes.buffer, 0, Math.floor(bytes.byteLength / 2));
+    if (!samples.length) return;
+    const buf = ctx.createBuffer(1, samples.length, TTS_RATE);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) ch[i] = samples[i] / 32768;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    const now = ctx.currentTime;
+    const at = Math.max(now + 0.02, this.playhead);
+    src.start(at);
+    this.playhead = at + buf.duration;
+    this.sources.add(src);
+    src.onended = () => this.sources.delete(src);
+    if (this._onFirstAudio) { this._onFirstAudio(); this._onFirstAudio = null; }
+  }
+
+  /** Barge-in: stop local playback and abort upstream synthesis. */
+  stopSpeaking() {
+    for (const s of this.sources) { try { s.stop(); } catch { /* ignore */ } }
+    this.sources.clear();
+    this.playhead = 0;
+    const ws = this.ws;
+    if (ws && ws.readyState === 1) {
+      try { ws.send(JSON.stringify({ type: 'tts_cancel' })); } catch { /* closed */ }
+    }
+  }
+
+  /** Timbre requests already run at 16 kHz; the browser resamples on playback. */
+  get ttsRate() { return TTS_RATE; }
 }

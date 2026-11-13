@@ -1,93 +1,91 @@
-// Gnani adapter: relays Prisma v3.0 (STT) and Timbre v3.0 (TTS) over WebSocket.
-// TODO(GNANI): exact endpoint URLs and message formats will be provided.
-// Authenticates the PWA with a session token.
-// Holds GNANI_API_KEY from .env.
-// Stores NOTHING on disk, and logs no transcripts.
+// Upstream Gnani clients. Protocol verified against docs.gnani.ai:
+//   STT: WSS wss://api.vachana.ai/stt/v3/stream
+//        headers x-api-key-id, language_code, model=prisma-v3.0, x-sample-rate,
+//                format (verbatim|transcribe|codemix|transliterate), VAD tuning
+//        audio: raw PCM signed 16-bit LE, mono, exactly 1024-byte frames
+//   TTS: WSS wss://api.vachana.ai/api/v1/tts
+//        header X-API-Key-ID; one JSON synthesis request per turn
+//        replies {type:'start'}, {type:'audio',data:{audio(base64),is_final}},
+//                {type:'complete'}, {type:'error'}
+import WebSocket from 'ws';
 
-// Configuration (from .env)
-const GNANI_API_KEY = import.meta.env.GNANI_API_KEY || ''; // TODO(GNANI): read from .env
-const GNANI_ENDPOINT = import.meta.env.GNANI_ENDPOINT || 'wss://api.gnani.ai'; // TODO(GNANI)
+export const STT_URL = 'wss://api.vachana.ai/stt/v3/stream';
+export const TTS_URL = 'wss://api.vachana.ai/api/v1/tts';
+export const TTS_MODEL = 'timbre-v3.0';
+export const TTS_VOICE = process.env.GNANI_TTS_VOICE || 'Shivani';
+export const TTS_SAMPLE_RATE = 16000;
 
-// WebSocket connections
-let sttWs = null; // Prisma STT WebSocket
-let ttsWs = null; // Timbre TTS WebSocket
+const LANGS = new Set(['en-IN', 'hi-IN', 'bn-IN', 'mr-IN', 'gu-IN', 'pa-IN', 'kn-IN', 'te-IN', 'ta-IN', 'ml-IN']);
 
-// Gnani Voice class implementing the same interface as js/voice.js
-export class GnaniVoice {
-  constructor({ onPartial, onFinal, onError }) {
-    this.onPartial = onPartial;
-    this.onFinal = onFinal;
-    this.onError = onError;
-    this.rec = null;
-    this.got = false;
-    this.streaming = false;
-    this.pendingChunks = [];
-    this.speaking = false;
-    this.speakStream = null;
-  }
-
-  // Authenticate and start STT stream over WebSocket
-  startStream() {
-    // TODO(GNANI): implement actual WebSocket connection to Gnini Prisma STT
-    // Message format on startup: { type: 'start', api_key: GNANI_API_KEY, mode: 'codemix' | 'transcribe' }
-    // Mode is exposed as a config value VOICE_MODE=transcribe|codemix
-    // this.sttWs = new WebSocket(`${GNANI_ENDPOINT}/stt`);
-    // this.sttWs.onmessage = (ev) => {
-    //   const msg = JSON.parse(ev.data);
-    //   if (msg.type === 'partial') this.onPartial(msg.text);
-    //   if (msg.type === 'final') { this.got = true; this.onFinal(msg.text); }
-    // };
-    // this.sttWs.onerror = (e) => this.onError(e.error);
-
-    // Mock: start mock stream for development
-    // In production, this would be the real Gnani WebSocket
-    // For now, fall back to mock if no real endpoint configured
-    if (!GNANI_API_KEY) {
-      // TODO(GNANI): show error or fall back to dev mode
-      this.onError('No GNANI_API_KEY configured');
-    }
-  }
-
-  // Send PCM audio data to Gnani STT
-  sendPcm(chunk) {
-    // TODO(GNANI): send chunk over STT WebSocket
-    // Expected format: 16 kHz mono PCM Int16Array or Buffer
-    // Message format: { type: 'pcm', data: chunk }
-    this.pendingChunks.push(chunk);
-  }
-
-  // End the STT stream (screen is the hard endpoint)
-  endStream() {
-    // TODO(GNANI): send finish signal to Gnini WebSocket
-    // Message format: { type: 'finish' }
-    // this.sttWs?.send(JSON.stringify({ type: 'finish' }));
-    this.sttWs = null;
-    this.streaming = false;
-    // After endStream, the Gnani service sends a final transcript
-    // which arrives via onFinal callback
-  }
+/**
+ * Language header. The live API rejects a comma list here
+ * ("exactly one locale is required"); parallel locales go in multi_lang_codes.
+ */
+export function languageHeader(lang, auto) {
+  if (auto || !lang || lang === 'auto') return 'indic-auto';
+  return LANGS.has(lang) ? lang : 'indic-auto';
 }
 
-// TTS over WebSocket to Timbre v3.0
-export function speak(text, lang = 'hi-IN') {
-  // TODO(GNANI): send TTS request over Gnani TTS WebSocket
-  // Message format: { type: 'speak', text, lang }
-  // The Timbre v3.0 engine streams audio starting at first chunk
-  // For now, fall back to browser speechSynthesis
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang;
-    u.rate = 1;
-    u.pitch = 1;
-    window.speechSynthesis.speak(u);
-  }
+/** Optional parallel locales for Hinglish-style input. */
+export function multiLangCodes(lang) {
+  if (!lang || lang === 'auto' || lang === 'en-IN' || !LANGS.has(lang)) return null;
+  return `${lang},en-IN`;
 }
 
-// Stop TTS playback (barge-in: pressing screen cancels immediately)
-export const stopSpeaking = () => {
-  // TODO(GNANI): send cancel signal to Gnani TTS WebSocket
-  // Message format: { type: 'cancel' }
-  // this.ttsWs?.send(JSON.stringify({ type: 'cancel' }));
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-};
+export function openStt({ apiKey, lang, auto = false, format = 'transcribe' }) {
+  const headers = {
+    'x-api-key-id': apiKey,
+    model: 'prisma-v3.0',
+    language_code: languageHeader(lang, auto),
+    'x-sample-rate': '16000',
+    format,
+    x_vad_threshold: '0.5',
+    'x-vad-threshold': '0.5',
+    'x-min-silence-ms': '600',
+    'x-idle-timeout-sec': '60',
+    topic: 'kirana shop khata, udhaar and payment',
+  };
+  const multi = multiLangCodes(lang);
+  if (multi && process.env.GNANI_MULTI_LANG === '1') headers.multi_lang_codes = multi;
+  return new WebSocket(STT_URL, { headers });
+}
+
+/** One synthesis request; resolves chunks through callbacks. */
+export function synthesize({ apiKey, text, lang = 'hi-IN', voice = TTS_VOICE, onStart, onChunk, onEnd, onError }) {
+  const ws = new WebSocket(TTS_URL, { headers: { 'X-API-Key-ID': apiKey, 'Content-Type': 'application/json' } });
+  let done = false;
+  const finish = () => { if (!done) { done = true; try { ws.close(); } catch { /* closed */ } } };
+
+  ws.on('open', () => {
+    ws.send(JSON.stringify({
+      text,
+      voice,
+      model: TTS_MODEL,
+      language: lang === 'auto' ? 'auto' : lang,
+      speed: 1.0,
+      audio_config: {
+        sample_rate: TTS_SAMPLE_RATE,
+        num_channels: 1,
+        sample_width: 2,
+        encoding: 'linear_pcm',
+        container: 'raw',
+      },
+    }));
+  });
+
+  ws.on('message', (raw) => {
+    let msg;
+    try { msg = JSON.parse(raw.toString()); } catch { return; }
+    if (msg.type === 'start') onStart?.();
+    else if (msg.type === 'audio') {
+      const b64 = msg.data?.audio || '';
+      if (b64) onChunk?.(Buffer.from(b64, 'base64'), msg.data?.chunk_index ?? 0);
+      if (msg.data?.is_final) { onEnd?.(); finish(); }
+    } else if (msg.type === 'complete') { onEnd?.(); finish(); }
+    else if (msg.type === 'error') { onError?.(msg.message || 'tts_error'); finish(); }
+  });
+
+  ws.on('error', (e) => { onError?.(e.message); finish(); });
+  ws.on('close', () => { if (!done) { done = true; onError?.('tts_closed'); } });
+  return ws;
+}

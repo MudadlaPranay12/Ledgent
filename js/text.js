@@ -124,7 +124,37 @@ const knda = {
   marks: { 'ಂ': 'n', 'ಃ': 'h', '್': '' },
 };
 
-const SCRIPTS = [deva, telu, taml, beng, gujr, knda];
+const guru = {
+  consonants: {
+    'ਕ': 'k', 'ਖ': 'kh', 'ਗ': 'g', 'ਘ': 'gh', 'ਙ': 'ng',
+    'ਚ': 'ch', 'ਛ': 'chh', 'ਜ': 'j', 'ਝ': 'jh', 'ਞ': 'ny',
+    'ਟ': 't', 'ਠ': 'th', 'ਡ': 'd', 'ਢ': 'dh', 'ਣ': 'n',
+    'ਤ': 't', 'ਥ': 'th', 'ਦ': 'd', 'ਧ': 'dh', 'ਨ': 'n',
+    'ਪ': 'p', 'ਫ': 'ph', 'ਬ': 'b', 'ਭ': 'bh', 'ਮ': 'm',
+    'ਯ': 'y', 'ਰ': 'r', 'ਲ': 'l', 'ਵ': 'v', 'ਸ਼': 'sh', 'ਸ': 's', 'ਹ': 'h', 'ਲ਼': 'l',
+  },
+  vowels: { 'ਅ': 'a', 'ਆ': 'aa', 'ਇ': 'i', 'ਈ': 'ii', 'ਉ': 'u', 'ਊ': 'uu', 'ਏ': 'e', 'ਐ': 'ai', 'ਓ': 'o', 'ਔ': 'au' },
+  matras: { 'ਾ': 'aa', 'ਿ': 'i', 'ੀ': 'ii', 'ੁ': 'u', 'ੂ': 'uu', 'ੇ': 'e', 'ੈ': 'ai', 'ੋ': 'o', 'ੌ': 'au' },
+  marks: { 'ਂ': 'n', 'ਃ': 'h', '੍': '' },
+};
+
+const mlym = {
+  consonants: {
+    'ക': 'k', 'ഖ': 'kh', 'ഗ': 'g', 'ഘ': 'gh', 'ങ': 'ng',
+    'ച': 'ch', 'ഛ': 'chh', 'ജ': 'j', 'ഝ': 'jh', 'ഞ': 'ny',
+    'ട': 't', 'ഠ': 'th', 'ഡ': 'd', 'ഢ': 'dh', 'ണ': 'n',
+    'ത': 't', 'ഥ': 'th', 'ദ': 'd', 'ധ': 'dh', 'ന': 'n',
+    'പ': 'p', 'ഫ': 'ph', 'ബ': 'b', 'ഭ': 'bh', 'മ': 'm',
+    'യ': 'y', 'ര': 'r', 'ല': 'l', 'വ': 'v', 'ശ': 'sh', 'ഷ': 'sh', 'സ': 's', 'ഹ': 'h',
+    'ള': 'l', 'ഴ': 'zh', 'റ': 'r',
+    'ൻ': 'n', 'ർ': 'r', 'ൽ': 'l', 'ൾ': 'l', 'ൺ': 'n', 'ം': 'm',
+  },
+  vowels: { 'അ': 'a', 'ആ': 'aa', 'ഇ': 'i', 'ഈ': 'ii', 'ഉ': 'u', 'ഊ': 'uu', 'ഋ': 'ri', 'എ': 'e', 'ഏ': 'ee', 'ഐ': 'ai', 'ഒ': 'o', 'ഓ': 'oo', 'ഔ': 'au' },
+  matras: { 'ാ': 'aa', 'ി': 'i', 'ീ': 'ii', 'ു': 'u', 'ൂ': 'uu', 'ൃ': 'ri', 'െ': 'e', 'േ': 'ee', 'ൈ': 'ai', 'ൊ': 'o', 'ോ': 'oo', 'ൌ': 'au' },
+  marks: { 'ഃ': 'h', '്': '' },
+};
+
+const SCRIPTS = [deva, telu, taml, beng, gujr, knda, guru, mlym];
 
 const SCRIPT_CHARS = new Map();
 for (const s of SCRIPTS) {
@@ -202,6 +232,9 @@ export function normalizeText(input) {
   s = s.replace(/₹/g, ' ');
   s = s.replace(/(\d),(?=\d{2,3}(?!\d))/g, '$1'); // 3,400 -> 3400
   s = s.replace(/[.,;:!?"'“”‘’()[\]{}|/\\<>*+=~`^%$#@&—–_]/g, ' ');
+  // Indic sentence punctuation (danda) survives transliteration and would
+  // otherwise glue onto the last word of every real Prisma transcript.
+  s = s.replace(/[\u0964\u0965\u0970\u00a1\u00bf]/g, ' ');
   s = s.replace(/[-]/g, ' ');
   s = s.replace(/([a-z])\1{2,}/g, '$1');           // sooooo -> so (letters only: 9000 stays 9000)
   s = s.replace(/\s+/g, ' ').trim();

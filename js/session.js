@@ -43,6 +43,7 @@ export function startDraft(parsed, customers = []) {
     amountPaise: first.amountPaise ?? 0,
     confidence: parsed.confidence || null,
     question: parsed.question || null,
+    balanceAmbiguous: !!parsed.balanceAmbiguous,
     readback: null,
     idempotencyKey: null,
   };

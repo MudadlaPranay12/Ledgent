@@ -9,13 +9,15 @@ import mr from './mr.js';
 import bn from './bn.js';
 import gu from './gu.js';
 import kn from './kn.js';
+import pa from './pa.js';
+import ml from './ml.js';
 
-const MODULES = [hi, en, te, ta, mr, bn, gu, kn];
+const MODULES = [hi, en, te, ta, mr, bn, gu, kn, pa, ml];
 
 export const LANGUAGES = MODULES.map(({ code, name, tts, stt }) => ({ code, name, tts: tts || `${code}-IN`, stt: stt || `${code}-IN` }));
 
 const TAGS = ['credit', 'payment', 'gave', 'took', 'past', 'today', 'yesterday', 'dayBefore',
-  'correction', 'confirm', 'cancel', 'negation', 'query', 'queryMax', 'fillers', 'particles'];
+  'correction', 'confirm', 'cancel', 'negation', 'query', 'queryMax', 'balance', 'fillers', 'particles'];
 
 const normWord = (w) => normalizeText(w);
 

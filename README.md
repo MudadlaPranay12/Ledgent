@@ -1,189 +1,278 @@
-# Ledgent - UPI-like Rupees Ledger Assistant
+# Ledgent — voice-first khata for Indian kirana shops
 
-## Setup
+A shopkeeper holds the phone, speaks across the counter, and the transaction is
+written into their notebook. Speech recognition is **Gnani Prisma v3.0**, speech
+synthesis is **Gnani Timbre v3.0**, both streamed over WebSocket through a small
+Node gateway that holds the API key. The ledger itself never leaves the device.
 
-### Prerequisites
-- Node.js >= 18
-- Python3 (for local server)
-- Gnani API key (for production mode)
-- ALLOWED_ORIGIN (for WebSocket security)
+Hackathon: Gnani Voice Hackathon, Problem Statement 2.
 
-### Installation
+---
+
+## 1. Problem statement
+
+Small shopkeepers keep credit ("udhaar") in a paper khata because typing an entry
+mid-counter is slower than the conversation. Existing apps assume a form, a
+keyboard, and English. The shopkeeper speaks Hinglish, Telugu, Tamil or Marathi,
+often in one sentence, and cares about three things only: who, how much, and
+whether it was credit or payment.
+
+## 2. The Ledgent solution
+
+* **Hold to talk.** Press the notebook, speak, release. Release is the hard
+  endpoint; a new press while Ledgent is speaking cuts it off (barge-in).
+* **Prisma writes the sentence onto the page** in a hand-written style, then the
+  deterministic parser turns it into a pencil draft: customer, amount, direction,
+  date.
+* **Ledgent reads the draft back** with Timbre and asks before saving. Nothing is
+  committed without confirmation.
+* **Confirmed entries become blue ink** in an event-sourced, hash-chained ledger
+  stored on the device (IndexedDB).
+* **Spoken queries** ("Suresh ka total?", "aaj kitna udhaar gaya?") are answered
+  locally from that ledger and spoken back.
+* **Corrections** ("nahi, 430") reverse the original event and post a replacement;
+  the hash chain still verifies.
+
+## 3. Architecture
+
+```
+ Android Chrome (static HTML/CSS/JS, no build step)
+ ┌───────────────────────────────────────────────────────────────┐
+ │ index.html + js/app.js        notebook UI, drafts, ledger view │
+ │ js/voice-gnani.js             gateway client, PCM playback     │
+ │ js/audio-capture.js           AudioWorklet mic → 16 kHz PCM16  │
+ │ js/parser.js + js/lexicon/*   deterministic multilingual parse │
+ │ js/ledger.js                  hash-chained events in IndexedDB │
+ └───────────────┬───────────────────────────────────────────────┘
+                 │  GET /health, GET /session (short-lived token)
+                 │  WS /voice  (Origin checked, token single-use)
+ ┌───────────────▼───────────────────────────────────────────────┐
+ │ gateway/server.js            native Node http + ws, no Docker  │
+ │   · holds GNANI_API_KEY (server-side only)                     │
+ │   · forwards exactly 1024-byte PCM16 frames upstream           │
+ │   · streams Timbre PCM chunks back as base64                   │
+ │   · cancellation, barge-in, rate limit, usage counter          │
+ └───────┬───────────────────────────────────┬───────────────────┘
+         │ WSS stt/v3/stream                 │ WSS api/v1/tts
+ ┌───────▼────────────┐            ┌─────────▼──────────┐
+ │ Gnani Prisma v3.0  │            │ Gnani Timbre v3.0  │
+ └────────────────────┘            └────────────────────┘
+```
+
+Data that leaves the phone: microphone audio (to the gateway, then to Prisma) and
+the short text of a spoken reply (to Timbre). Customer records, balances and the
+ledger stay in the browser's IndexedDB; no LLM or external service receives them.
+
+## 4. Setup — frontend and gateway
+
+Requirements: Node 20+ (tested on 24.11.1), a Chromium-based browser, a Gnani API
+key.
+
 ```bash
-# Install dependencies
+# 1. static app (no build step)
 npm install
+npm start                      # http://localhost:8199
 
-# Create .env file
-cp .env.example .env
-# Edit .env with your Gnani API key and allowed origin
-
-# Start the development server
-npm start
-# This runs python3 -m http.server 8080
-
-# Or use the development mode
-npm run dev
+# 2. gateway
+cd gateway && npm install
+cp .env.example .env           # then put the real key in gateway/.env
+cd .. && npm run gateway       # http://localhost:8787
 ```
 
-### Environment Variables
-Create a `.env` file based on `.env.example`:
+`gateway/.env` is gitignored and is the only place the key may exist locally:
 
 ```
-GNANI_API_KEY=your_gnani_api_key_here
-ALLOWED_ORIGIN=https://your-domain.com
-GATEWAY_PORT=3000
-VOICE=gnani  # or "mock" for development
+GNANI_API_KEY=...
+ALLOWED_ORIGIN=http://localhost:8199
+GATEWAY_PORT=8787
+GNANI_TTS_VOICE=Shivani
 ```
 
-### Available Scripts
-- `npm test` - Run every `tests/*.test.mjs` plus `tests/run.mjs` via `tests/all.mjs`, printing per-file counts and a grand total
-- `npm run e2e` - Real Chromium (Playwright) run with `?voice=mock`; saves screenshots to `tests/artifacts/`
-- `npm run check` - Run both test and E2E
-- `npm start` - Static dev server on `http://localhost:8080` (`scripts/serve.mjs`)
-- `npm run phrases` - Regenerate `tests/phrases.json` and run the phrase suite
+Open `http://localhost:8199/?voice=gnani`. If the gateway is unreachable the app
+falls back to browser speech **with a loud "DEV VOICE" badge** — that fallback is
+a development convenience, never the production path.
 
-`tests/run.mjs` is currently a placeholder: the original 41-test suite was lost and this folder has no git history to restore it from. `tests/all.mjs` reports it as `NO TESTS` until the original file is supplied.
+Useful URL flags: `?voice=mock` (scripted transcripts for demos/tests),
+`?voice=dev` (browser speech), `?lang=te-IN`, `?gw=https://gateway.example.com`
+(deployed gateway), `?format=codemix` (Prisma code-mix mode).
 
-## Architecture
+## 5. Gnani Prisma v3.0 integration
 
-### Overview
-Ledgent is a UPI-like rupees ledger assistant that handles voice-based financial transactions. The system consists of:
+Verified against `docs.gnani.ai` and by live calls:
 
-1. **Frontend (PWA)** - Browser-based UI with voice input, Guard-controlled guardrails, and PWA features
-2. **Gateway Server** - Node.js + WebSocket bridge to Gnani services
-3. **Gnani Services** - Speech-to-text, natural language processing, and transaction management
+| Item | Value |
+| --- | --- |
+| Endpoint | `wss://api.vachana.ai/stt/v3/stream` |
+| Auth header | `x-api-key-id` |
+| Model header | `model: prisma-v3.0` |
+| Language | `language_code: hi-IN` (exactly one locale; the API rejects a comma list — parallel locales need `multi_lang_codes`) |
+| Auto detect | `language_code: indic-auto` |
+| Audio | raw PCM, signed 16-bit LE, mono, 16 kHz |
+| Framing | exactly 1024-byte frames, ~32 ms cadence |
+| Modes | `format: transcribe` (default: numbers as digits) or `codemix` |
+| End of utterance | client sends `{"type":"commit"}` |
+| Server events | `connected`, `processing`, `transcript`, `error` |
 
-### Data Flow
-1. User speaks via browser voice input
-2. Parser tokenizes and extracts amounts from utterance
-3. Guard system checks 3 guards (amount vs median, recent same type+amount, transcript conflict)
-4. If guards pass, session state machine processes the transaction
-5. Ledger records the transaction with full audit trail
-6. Replies confirmed via readback generation
+Browser side: `getUserMedia` with `noiseSuppression`, `echoCancellation`,
+`autoGainControl` → `AudioWorklet` (`js/pcm-worklet.js`) that resamples to 16 kHz
+with linear interpolation and emits 512 Int16 samples (1024 bytes) per message.
+The 48 kHz stream is never relabelled as 16 kHz.
 
-### Component Diagram
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    LEDGENT PWA (Browser)                       │
-│  ┌─────────────┐  voiceinput  ┌───────────────┐  parse  ┌──────┐ │
-│  │  app.js     │  ──────────→ │  numbers.js   │ ──────→ │parser│ │ │
-│  └─────────────┘              └───────────────┘         └──────┘ │
-│           │                                                        │
-│  tokens  │  WS connection  │  guard checks  │  ledger ops │
-│  ────────┼──────────────►│  ────────────►│  ───────────►│
-│           │                                                        │
-└─────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    GATEWAY SERVER (Node.js + ws)               │
-│  ┌─────────────────────┐  HTTP/Socket  ┌────────────────────┐ │
-│  │  server.js          │  ────────────→│  Gnani Adapter     │ │
-│  │  - Token auth     │               │  - STT/TTS         │ │
-│  │  - Origin check   │               │  - DPDP compliance │ │
-│  │  - Rate limiting  │               │  - RA compliance   │ │
-│  └─────────────────────┘               └────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    GNANI PRISMA v3.0 SERVICES                   │
-│  - Speech-to-text (Timbre v3.0)                                 │
-│  - Natural language understanding                              │
-│  - Transaction management                                      │
-│  - DPDP Act compliance                                         │
-│  - Rate limiting & auditing                                    │
-└─────────────────────────────────────────────────────────────────┐
-                                                            │
-                                                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    LEDGER & STATE MACHINE                        │
-│  - MemoryStore (in-memory event store)                         │
-│  - Ledger class (with sealDay, verify, replay)                 │
-│  - Guard system (3 guards + checkAllGuards)                    │
-│  - Reminder opt-in system                                      │
-└─────────────────────────────────────────────────────────────────┘
-```
+## 6. Gnani Timbre v3.0 integration
 
-### Gnani Services Used
-- **STT (Speech-to-Text)**: Timbre v3.0 integration for Hindi/Indian language voice processing
-- **TTS (Text-to-Speech)**: Audio output for readbacks and confirmations
-- **NLP**: Natural language understanding for parsing voice utterances
-- **DPDP Act**: Data Protection and Digital Privacy Act compliance for user data
-- **RA (Risk Assessment)**: Risk assessment for transaction validation
+| Item | Value |
+| --- | --- |
+| Endpoint | `wss://api.vachana.ai/api/v1/tts` |
+| Auth header | `X-API-Key-ID` |
+| Model | `model: timbre-v3.0` |
+| Voice | `Shivani` (female, from the v3.0 catalogue; configurable) |
+| Request | `{text, voice, model, language, speed, audio_config}` |
+| `audio_config` | `sample_rate: 16000, num_channels: 1, sample_width: 2, encoding: linear_pcm, container: raw` |
+| Responses | `start`, `audio` (base64 chunks, `is_final`), `complete`, `error` |
 
-## Gnani Services
+Chunks are forwarded to the browser as they arrive and scheduled into a Web Audio
+buffer queue; playback starts on the first chunk instead of waiting for `complete`.
+Barge-in stops local sources and sends `tts_cancel`, which closes the upstream
+synthesis socket and drops queued utterances.
 
-### What Receives Audio/Text
-- **Gateway WebSocket**: Receives audio chunks and transcripts from the PWA
-- **Gnani Adapter**: Processes audio through STT, returns parsed text and extracted amounts
-- **Ledger**: Records transactions with full audit trail (event hashing, sealing, verification)
-- **Guard System**: Validates transactions against 3 security guards before commit
+Amounts are spoken as words before synthesis where the parser has a spoken form
+(e.g. ₹340 → "teen sau chaalis rupaye"); the readback also offers digit-by-digit
+confirmation ("teen-char-shunya rupaye, sahi?") when confidence is low.
 
-### DPDP Note
-Ledgent complies with the Digital Personal Data Protection (DPDP) Act, 2023:
-- No audio or transcript data is written to disk
-- All gateway WebSocket traffic is encrypted and origin-authenticated
-- User data is stored only in memory during sessions
-- Session tokens have short TTL (10 minutes) and are rate-limited per IP
-- Users can opt-out of reminders via `reminderOptIn` flag
-- No personally identifiable information is retained after session expiry
+## 7. Gnani services used
 
-### RA Checklist
-- [ ] Guard 1: Amount vs median check (5x threshold with 3+ past entries)
-- [ ] Guard 2: Recent same type+amount within 10 minutes
-- [ ] Guard 3: Transcript digit conflict detection
-- [ ] Origin authentication for WebSocket connections
-- [ ] Token-based session management with 10-minute TTL
-- [ ] Rate limiting per IP (10 requests/minute)
-- [ ] No disk persistence of audio or transcripts
-- [ ] DPDP Act compliance for data protection
-- [ ] Reminder opt-in consent mechanism
+* Prisma v3.0 — streaming speech recognition (WebSocket).
+* Timbre v3.0 — streaming speech synthesis (WebSocket).
+* No voice cloning, no REST STT for the live microphone path.
 
-## Limitations
-- Gateway requires GNANI_API_KEY and ALLOWED_ORIGIN environment variables for production
-- Mock mode (`VOICE=mock`) available for development and testing only
-- Full Gnani integration requires active Gnani Prisma v3.0 and Timbre v3.0 accounts
-- Voice input limited to supported languages (Hindi/Indian languages)
-- Concurrent sessions per customer limited by state machine idempotency
-- Storage is IndexedDB (`IdbStore`, schema v2); a blocked upgrade falls back to memory and says so
-- Gnani voice is used only when a gateway URL is configured and `/health` answers; otherwise the app shows the fixed badge `DEV VOICE: browser speech, not Gnani`
-- Telugu/Tamil/Marathi/Bengali/Gujarati/Kannada lexicon entries marked `unverified` in `js/lexicon/*.js` were not checked with native speakers
-- The optional LLM fallback (`js/llm.js`) is off by default and expects a `POST /llm` route on the gateway, which is not implemented here
-- PWA features work best on Chromium-based browsers
-- Offline functionality limited to cached resources only
+## 8. Actual language support (measured, not claimed)
 
-## Deployment
+Prisma is asked for one language at a time, or `indic-auto`. The parser has
+lexicons for ten languages plus Hinglish/English mixing. "Tested" below means
+**automated parser tests**, except where real audio is named explicitly.
 
-### Vercel/Netlify Frontend
-1. Connect repository to Vercel or Netlify
-2. Set environment variables in dashboard:
-   - `GNANI_API_KEY`
-   - `ALLOWED_ORIGIN`
-   - `VOICE=gnani` (production) or `VOICE=mock` (development)
-3. Deploy on push
+| Language | Prisma code | Parser lexicon | Automated tests | Real audio through Prisma |
+| --- | --- | --- | --- | --- |
+| Hindi / Hinglish | hi-IN | yes | yes (phrases + adversarial + matrix) | yes — "रमेश का 340 उधार।" |
+| English | en-IN | yes | yes | synthetic phrase only |
+| Telugu | te-IN | yes (basic number words) | yes | synthetic proxy mispronounced one word — see limitations |
+| Tamil | ta-IN | yes | yes | no |
+| Marathi | mr-IN | yes | yes | no |
+| Bengali | bn-IN | yes | yes | no |
+| Gujarati | gu-IN | yes | yes | no |
+| Kannada | kn-IN | yes | yes | no |
+| Punjabi | pa-IN | added (unverified) | yes | no |
+| Malayalam | ml-IN | added (unverified) | yes | no |
 
-### Gateway on Long-Running Host
-1. Build and deploy Docker container to any Node.js hosting (Render, Railway, Fly.io, etc.)
-2. Set same environment variables
-3. Configure CORS/origin to match frontend domain
-4. Update frontend `ALLOWED_ORIGIN` to point to gateway host
+Nothing in this table is native-speaker validated. Punjabi and Malayalam entries
+are best-effort and marked `// unverified` in `js/lexicon/pa.js` and `ml.js`.
 
-### Docker Deployment
+## 9. Run instructions (local and deployed)
+
+Local: section 4. HTTPS is required for microphone access in a deployed app.
+
+Frontend → Netlify (`netlify.toml`) or Vercel (`vercel.json`): publish the
+repository root, no build step. Then open the site with
+`?gw=https://<gateway-host>` once, or store the gateway URL in the browser.
+
+Gateway → Render (`render.yaml`) or Railway, native Node, no Docker:
+
 ```bash
-# Build
-docker build -t ledgent-gateway ./gateway/
-
-# Run
-docker run -d \
-  -p 3000:3000 \
-  -e GNANI_API_KEY=your_key \
-  -e ALLOWED_ORIGIN=https://your-domain.com \
-  ledgent-gateway
+cd gateway && npm install --omit=dev
+node server.js
 ```
 
-## PWA Features
-- **Manifest**: icons (192, 512, 384, 152, 144, 128, 96, 72 px), standalone mode
-- **Service Worker**: never caches gateway WebSocket/API calls, versioned cache, skipWaiting, clients.claim
-- **Offline**: cached essential resources only
-- **Installable**: Add to home screen on supported browsers
+Set `GNANI_API_KEY` and `ALLOWED_ORIGIN=https://<your-static-site>` as service
+secrets, and `GATEWAY_PORT` if the platform requires it. Health check:
+`GET https://<gateway-host>/health` → `{"status":"ok","stt":"configured",...}`.
+
+**Deployment status: not deployed.** No hosting account or credentials were
+available in this environment, so the tunnel deploy check has not been run.
+
+## 10. Responsible AI and data handling
+
+* First turn: Ledgent says it is an AI, in the selected language (ten short
+  disclosures in `js/lang.js`, Hinglish as the fallback).
+* Synthetic demo customers only; the ledger lives on the device.
+* No raw audio and no transcripts are written to disk by the app or the gateway.
+  The gateway's usage counter stores counts and timings only.
+* Nothing is saved without confirmation; corrections preserve the original entry
+  as a reversal plus replacement event.
+* No lending, no collection pressure, no reminders in this voice build.
+* The API key never reaches the browser; `gateway/.env` is gitignored.
+
+## 11. Testing
+
+```bash
+npm test                 # 352 passed, 0 failed across 9 files
+npm run e2e              # Playwright, real Chromium, 8 checks + screenshots
+node scripts/gnani-smoke.mjs "Ramesh ka teen sau chaalis udhaar" hi-IN
+node scripts/gateway-live-check.mjs
+node scripts/stt-benchmark.mjs --langs hi-IN --limit 5
+```
+
+`npm test` exits non-zero **only** because `tests/run.mjs` is a 39-byte
+placeholder: the original 41-test suite was not recoverable from this folder (no
+git history existed before this work). Everything else passes. Screenshots land
+in `tests/artifacts/`.
+
+Tests use a fake upstream (`tests/gateway.test.mjs`), so unit tests never spend
+Gnani credits.
+
+## 12. Measured evidence and known limitations
+
+Real API runs (this machine, Node 24, November 2026):
+
+```
+Timbre v3.0 -> Prisma v3.0 loop
+voice: Shivani (timbre-v3.0)   language: hi-IN
+input text: Ramesh ka teen sau chaalis udhaar
+TTS ok: 27 chunks, 69120 bytes PCM16 @16k (2.16s audio)
+TTS request -> first audio chunk: 424 ms
+TTS request -> stream complete:   1574 ms
+STT ok: 1 transcript segment(s)
+  transcript: "रमेश का 340 उधार।"
+  detected_language_code: hi-IN   server latency: 101   audio_duration_ms: 2160
+```
+
+```
+gateway GET /health -> {"status":"ok","stt":"configured","model":"prisma-v3.0",...}
+GET /session (foreign origin) -> 403
+GET /session (allowed origin) -> 200
+WS /voice -> open (token accepted) -> connected -> stt_ready
+real Prisma handshake through the gateway: OK (520 ms)
+```
+
+Hindi matrix, 5 categories (synthetic Timbre speech as input):
+
+```
+credit     "रमेश का 340 उधार।"          amount ✓  direction ✓  ambiguity flagged ✓
+payment    "सुरेश ने 500 रुपये दिए।"     amount ✓  direction ✓  customer ✓
+correction "नहीं, 430।"                 amount ✓  correction ✓
+query      "सुरेश का टोटल कितना है?"     query ✓   customer ✓
+ambiguity  "रमेश का 200 उधार।"          amount ✓  ambiguity flagged ✓
+
+amount accuracy 4/4 · direction 4/4 · customer 2/3 · ambiguity 1/1 · 5 API calls
+```
+
+The one "customer miss" is two shopkeepers both named Ramesh in the demo data:
+the parser correctly refuses to pick one and asks. For that reason the matrix now
+expects ambiguity on bare "Ramesh" rows.
+
+Not done / not verified:
+
+* **No live microphone session was tested.** This machine has no microphone in
+  the automated environment, so the mic → Prisma → UI path is implemented and
+  unit-tested at the gateway boundary but not exercised end-to-end by a human
+  voice. The keyboard path and scripted voice cover the rest of the flow.
+* **No real-voice latency p50/p95.** Only the numbers above were measured, and
+  headless runs are excluded by definition. Use `scripts/stt-benchmark.mjs` with a
+  real microphone and `tests/recorder.html` to collect 20+ runs.
+* **Telugu synthetic proxy failed on one word**: Timbre pronounced "migilindi" as
+  "मिलीलीटर" ("millilitre"), so the transcript contained a unit, not the balance
+  word. The parser handles the same sentence when the transcript is right
+  (`गोपाल का पैसा 300 मिगिलिंदी।` → balance question, never a guess), and it
+  strips the Devanagari danda that real transcripts end with.
+* Native number words exist for Hindi/English and a basic Telugu set; other
+  languages rely on digits in the transcript.
+* Netlify/Vercel/Render deployment was not executed.

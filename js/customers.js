@@ -49,11 +49,24 @@ function narrowByLabel(list, words) {
  * @returns {{status:'ok'|'ambiguous'|'new'|'missing', id?:string, candidates?:string[],
  *            newName?:string, matchedBy?:string}}
  */
+// Names arrive with case endings glued on across languages: "Rameshinu"
+// (Malayalam), "Ramesh-ku" (Tamil), "Rameshla" (Marathi). Strip a trailing
+// particle before comparing, keeping at least four characters of the name.
+const CASE_SUFFIXES = ['inu', 'inteth', 'nte', 'ude', 'ku', 'ki', 'nu', 'la', 'le', 'ge', 'ne', 'ke', 'de', 'da', 'di', 'ka', 'ko', 'il', 'ton', 'se'];
+const nameVariants = (t) => {
+  const out = [t];
+  for (const s of CASE_SUFFIXES) {
+    if (t.endsWith(s) && t.length - s.length >= 4) out.push(t.slice(0, -s.length));
+  }
+  return out;
+};
+
 export function matchCustomer(words, customers = [], opts = {}) {
   const tokens = words.filter((t) => t !== ',');
+  const expanded = [...new Set(tokens.flatMap(nameVariants))];
   const exact = [];
   for (const c of customers) {
-    if (nameKeys(c).some((k) => tokens.includes(k))) exact.push(c);
+    if (nameKeys(c).some((k) => expanded.includes(k))) exact.push(c);
   }
 
   let pool = exact;
@@ -62,7 +75,7 @@ export function matchCustomer(words, customers = [], opts = {}) {
   if (pool.length === 0) {
     pool = [];
     for (const c of customers) {
-      if (phonKeys(c).some((k) => tokens.some((t) => t.length >= 3 && phoneticKey(t) === k))) pool.push(c);
+      if (phonKeys(c).some((k) => expanded.some((t) => t.length >= 3 && phoneticKey(t) === k))) pool.push(c);
     }
     matchedBy = 'phonetic';
   }
@@ -70,7 +83,7 @@ export function matchCustomer(words, customers = [], opts = {}) {
   if (pool.length === 0) {
     pool = [];
     for (const c of customers) {
-      if (looseKeys(c).some((k) => tokens.some((t) => t.length >= 3 && looseKey(t) === k))) pool.push(c);
+      if (looseKeys(c).some((k) => expanded.some((t) => t.length >= 3 && looseKey(t) === k))) pool.push(c);
     }
     matchedBy = 'loose';
   }

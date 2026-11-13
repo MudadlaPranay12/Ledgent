@@ -251,9 +251,20 @@ export function parseUtterance(text, ctx = {}) {
   const readbackDigits = level === 'low' ? digitsSpoken(actions[0].amountPaise) : null;
   if (readbackDigits) question = `${readbackDigits}, sahi?`;
 
+  // "Gopal ka paisa 300 migilindi" says money is LEFT, not that a new entry
+  // happened. Ask which one the shopkeeper means; never guess.
+  let balanceAmbiguous = false;
+  if (hasAmount && hasAny(L.balance, words) && customer.status === 'ok') {
+    const c = customers.find((x) => x.id === customer.id);
+    const name = c ? c.name : 'Customer';
+    const rs = Math.round(actions[0].amountPaise / 100);
+    balanceAmbiguous = true;
+    question = `${name} ka total \u20b9${rs} baaki hai, ya \u20b9${rs} ka naya udhaar likhun?`;
+  }
+
   return {
     intent: 'transaction', customer, actions, ambiguous: actions.length > 1,
-    confidence: { score, level, reasons }, question, readbackDigits,
+    confidence: { score, level, reasons }, question, readbackDigits, balanceAmbiguous,
     needsConfirmation: level !== 'high' || customer.status !== 'ok' || !!question,
     normalized, raw,
   };

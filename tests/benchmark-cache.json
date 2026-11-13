@@ -1,0 +1,144 @@
+{
+  "hi-IN|credit|transcribe": {
+    "lang": "hi-IN",
+    "category": "credit",
+    "format": "transcribe",
+    "text": "Ramesh ka 340 udhaar",
+    "transcript": "रमेश का 340 उधार।",
+    "detected": "hi-IN",
+    "score": {
+      "amount": true,
+      "type": true,
+      "customer": null,
+      "ambiguity": true,
+      "got": {
+        "amount": 34000,
+        "type": "credit",
+        "customer": null,
+        "ambiguous": true
+      }
+    },
+    "expected": {
+      "amount": 34000,
+      "type": "credit",
+      "ambiguous": true
+    },
+    "ttsFirstChunkMs": 437,
+    "transcriptMs": 314,
+    "runs": 2,
+    "at": "2026-11-13T12:42:09.735Z"
+  },
+  "hi-IN|payment|transcribe": {
+    "lang": "hi-IN",
+    "category": "payment",
+    "format": "transcribe",
+    "text": "Suresh ne 500 rupaye diye",
+    "transcript": "सुरेश ने 500 रुपये दिए।",
+    "detected": "hi-IN",
+    "score": {
+      "amount": true,
+      "type": true,
+      "customer": true,
+      "ambiguity": null,
+      "got": {
+        "amount": 50000,
+        "type": "payment",
+        "customer": "s1",
+        "ambiguous": false
+      }
+    },
+    "expected": {
+      "amount": 50000,
+      "type": "payment",
+      "customer": "s1"
+    },
+    "ttsFirstChunkMs": 383,
+    "transcriptMs": 237,
+    "runs": 1,
+    "at": "2026-11-13T12:40:53.667Z"
+  },
+  "hi-IN|correction|transcribe": {
+    "lang": "hi-IN",
+    "category": "correction",
+    "format": "transcribe",
+    "text": "nahi, 430",
+    "transcript": "नहीं, 430।",
+    "detected": "hi-IN",
+    "score": {
+      "amount": true,
+      "type": true,
+      "customer": null,
+      "ambiguity": null,
+      "got": {
+        "amount": 43000,
+        "type": "correct",
+        "customer": null,
+        "ambiguous": false
+      }
+    },
+    "expected": {
+      "amount": 43000,
+      "type": "correct"
+    },
+    "ttsFirstChunkMs": 495,
+    "transcriptMs": 243,
+    "runs": 1,
+    "at": "2026-11-13T12:40:59.137Z"
+  },
+  "hi-IN|query|transcribe": {
+    "lang": "hi-IN",
+    "category": "query",
+    "format": "transcribe",
+    "text": "Suresh ka total kitna hai",
+    "transcript": "सुरेश का टोटल कितना है?",
+    "detected": "hi-IN",
+    "score": {
+      "amount": null,
+      "type": true,
+      "customer": true,
+      "ambiguity": null,
+      "got": {
+        "amount": null,
+        "type": "customer_total",
+        "customer": "s1",
+        "ambiguous": false
+      }
+    },
+    "expected": {
+      "type": "query",
+      "customer": "s1"
+    },
+    "ttsFirstChunkMs": 480,
+    "transcriptMs": 195,
+    "runs": 1,
+    "at": "2026-11-13T12:41:03.550Z"
+  },
+  "hi-IN|ambiguity|transcribe": {
+    "lang": "hi-IN",
+    "category": "ambiguity",
+    "format": "transcribe",
+    "text": "Ramesh ka 200 udhaar",
+    "transcript": "रमेश का 200 उधार।",
+    "detected": "hi-IN",
+    "score": {
+      "amount": true,
+      "type": null,
+      "customer": null,
+      "ambiguity": true,
+      "got": {
+        "amount": 20000,
+        "type": "credit",
+        "customer": null,
+        "ambiguous": true
+      }
+    },
+    "expected": {
+      "amount": 20000,
+      "ambiguous": true
+    },
+    "ttsFirstChunkMs": 461,
+    "transcriptMs": 212,
+    "runs": 1,
+    "at": "2026-11-13T12:41:07.512Z"
+  }
+}

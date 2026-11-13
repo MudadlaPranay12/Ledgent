@@ -23,8 +23,11 @@ export default {
   cancel: ['వద్దు', 'ఆపు', 'vaddu', 'aapu'], // unverified
   negation: ['కాదు', 'లేదు', 'kaadu', 'ledu'],
   query: ['మొత్తం', 'ఎంత', 'లెక్క', 'mottam', 'entha', 'lekka'],
+  // "migilindi" = "is remaining": often a balance statement, not a new entry.
+  balance: ['మిగిలింది', 'మిగిలి', 'migilindi', 'migilindii', 'migili', 'బాకీ', 'baaki'],
   queryMax: ['ఎక్కువ', 'ఎవరు', 'ekkuva', 'evaru'], // unverified word order
   fillers: ['రూపాయలు', 'అండి', 'గారు', 'rupayalu', 'andi', 'garu'],
   particles: ['కి', 'కు', 'తో', 'నుంచి', 'ki', 'ku', 'to', 'nunchi'],
   labels: {},
 };
+

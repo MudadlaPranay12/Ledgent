@@ -7,7 +7,7 @@ import { startDraft, generateReadback, confirmDraft, correctDraft, resetDraft, S
 import { checkAllGuards } from './guards.js';
 import { answerQuery } from './answers.js';
 import { llmFallback, llmAvailable } from './llm.js';
-import { LANGS, chooseLang, langLabel, nextLang } from './lang.js';
+import { LANGS, chooseLang, disclosureFor, langLabel, nextLang } from './lang.js';
 import { resolveVoice, speak, stopSpeaking, voiceErrorText } from './voice-router.js';
 import { digitsSpoken } from './numbers.js';
 
@@ -43,6 +43,7 @@ const S = {
   session: { state: STATE.IDLE, draft: null },
   activeCustomerId: null, holding: false, voice: null, lang: CONFIG.lang,
   lastTxnId: null, flags: [], lat: {}, finalLock: false, typingTimer: null, seenFinal: false,
+  detectedLang: null, disclosed: false,
 };
 
 // ---------------------------------------------------------------- status / toast
@@ -83,14 +84,24 @@ function typeIntoHeard(text, speed = 16) {
 }
 
 // ---------------------------------------------------------------- speech out
-function speakNow(text) {
+// Timbre v3.0 streams the reply; "first audio" is the moment the first PCM
+// chunk is actually scheduled for playback — measured, never estimated.
+function speakNow(text, langOverride) {
   if (!text) return;
   S.lat.ttsAt = performance.now();
-  const started = speak(text, S.lang, () => {
-    if (!S.lat.firstAudio) S.lat.firstAudio = performance.now();
-    renderDebug();
-  });
-  if (!started) S.lat.firstAudio = performance.now();
+  const lang = langOverride || S.detectedLang || S.lang;
+  const engine = S.voice?.engine;
+  if (engine && engine.speak) {
+    Promise.resolve(engine.speak(text, lang)).then((ok) => {
+      if (ok && !S.lat.firstAudio) S.lat.firstAudio = performance.now();
+      renderDebug();
+    }).catch(() => { /* spoken reply is best-effort */ });
+  } else {
+    speak(text, lang, () => {
+      if (!S.lat.firstAudio) S.lat.firstAudio = performance.now();
+      renderDebug();
+    });
+  }
   renderDebug();
 }
 
@@ -263,6 +274,19 @@ function draftQuestion() {
   if (d.customerStatus === 'missing') {
     return { text: 'Kiska hisab? Naam boliye ya Type dabaiye.', blocking: true, choices: [] };
   }
+  if (d.balanceAmbiguous) {
+    const name = d.customerName || 'Customer';
+    const rs = rupees(a.amountPaise || d.amountPaise);
+    return {
+      text: `${name} ka total \u20b9${rs} baaki hai, ya \u20b9${rs} ka naya udhaar likhun?`,
+      blocking: true,
+      choices: [
+        { label: 'Total baaki hai', act: () => showBalance(d.customerId) },
+        { label: 'Naya udhaar', act: () => { d.balanceAmbiguous = false; setType('credit'); } },
+        { label: 'Payment mila', act: () => { d.balanceAmbiguous = false; setType('payment'); } },
+      ],
+    };
+  }
   if (!a.type) {
     return {
       text: 'Udhaar ya payment?', blocking: true,
@@ -385,6 +409,7 @@ function setType(type) {
   if (!S.session.draft) return;
   S.session.draft.actions.forEach((a) => { a.type = type; });
   S.session.draft.type = type;
+  S.session.draft.balanceAmbiguous = false;
   const text = generateReadback(S.session.draft, S.customers);
   typeIntoHeard(text);
   setStatus('needs', 'Needs confirmation');
@@ -400,6 +425,24 @@ function setDate(date) {
   typeIntoHeard(text);
   setStatus('needs', 'Needs confirmation');
   speakNow(text);
+}
+
+// "Total baaki hai": answer from the local ledger, do not post anything.
+function showBalance(id) {
+  const c = customerById(id);
+  if (!c) return;
+  const ans = answerQuery(
+    { intent: 'query', kind: 'customer_total', id, customer: { status: 'ok', id } },
+    { customers: S.customers, events: S.events, today: S.today },
+  );
+  S.session.draft = null;
+  S.session.state = STATE.IDLE;
+  S.flags = [];
+  renderAll();
+  typeIntoHeard(ans.text);
+  setStatus('idle', `Listening · ${ans.text}`);
+  toast(ans.text, 5000);
+  speakNow(ans.text);
 }
 
 async function createNewCustomer() {
@@ -621,6 +664,15 @@ async function initVoice() {
       document.body.classList.remove('listening');
       handleUtterance(t, 'voice').finally(() => { setTimeout(() => { S.finalLock = false; }, 300); });
     },
+    onDetected: (code) => {
+      if (!code) return;
+      S.detectedLang = code;
+      // Auto mode follows Prisma's own detection; manual mode keeps the choice.
+      if (S.lang === 'auto' && LANGS.some((l) => l.code === code)) {
+        S.lang = code;
+        els.langLbl.textContent = langLabel(code);
+      }
+    },
     onError: (code) => {
       S.holding = false;
       document.body.classList.remove('listening');
@@ -638,7 +690,15 @@ async function initVoice() {
 
 function beginHold() {
   if (S.holding) return;
+  // Barge-in: a new press immediately silences Ledgent and aborts synthesis.
+  try { S.voice?.engine?.stopSpeaking?.(); } catch { /* ignore */ }
   stopSpeaking();
+  if (!S.disclosed) {
+    S.disclosed = true;
+    const line = disclosureFor(S.lang);
+    toast(line, 6000);
+    speakNow(line);
+  }
   if (!S.voice || !S.voice.engine) {
     setStatus('error', 'Voice not available in this browser');
     toast('Voice not available in this browser — use Type', 4000);
@@ -646,6 +706,7 @@ function beginHold() {
   }
   S.holding = true;
   S.seenFinal = false;
+  S.detectedLang = null;
   S.lat = { speechEnd: 0 };
   document.body.classList.add('listening');
   setStatus('listening', 'Listening…');
@@ -701,6 +762,7 @@ function initChrome() {
   els.langBtn.addEventListener('click', () => {
     const code = nextLang(S.lang);
     S.lang = chooseLang(code);
+    S.detectedLang = null;
     S.voice?.setLang?.(S.lang);
     els.langLbl.textContent = langLabel(S.lang);
     const name = LANGS.find((l) => l.code === S.lang)?.name || S.lang;

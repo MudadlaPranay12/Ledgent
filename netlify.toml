@@ -1,0 +1,20 @@
+# Static frontend: no build step. Publish the repository root so /js, /icons
+# and index.html are served as-is over HTTPS (required for microphone access).
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+# The gateway is a separate Node service (Render/Railway). Point the app at it
+# with ?gw=https://your-gateway.onrender.com or store it once in the browser
+# via the URL parameter; the API key never leaves the gateway.

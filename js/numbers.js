@@ -34,6 +34,17 @@ for (const part of HI_TABLE.split('|')) {
   for (const w of list.split(',')) if (w) WORDS.set(w, { v: Number(n), en: false, tens: Number(n) >= 20 && Number(n) % 10 === 0 });
 }
 
+// Telugu number words (romanised, the same forms Prisma returns for te-IN).
+// Only the forms used in tested phrases are listed: this is not a complete
+// Telugu number grammar, and it is marked as such in the README.
+const TE_TABLE =
+  '1 okati,oka|2 rendu|3 moodu|4 nalugu|5 aidu|6 aaru|7 edu|8 enimidi|9 tommidi|' +
+  '10 padi|20 iravai|30 muppai|40 nalabhai|50 yabhai|60 aravai|70 debbhai|80 enabhai|90 tombhai';
+for (const part of TE_TABLE.split('|')) {
+  const [n, list] = part.split(' ');
+  for (const w of list.split(',')) if (w) WORDS.set(w, { v: Number(n), en: false, tens: Number(n) >= 20 && Number(n) % 10 === 0 });
+}
+
 const EN_UNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 EN_UNITS.forEach((w, i) => { if (i >= 0) WORDS.set(w, { v: i, en: true, tens: false }); });
 const EN_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
@@ -63,7 +74,13 @@ const LOOSE = new Map();
   for (const [f, v] of seen) if (v != null) LOOSE.set(f, v);
 }
 
-const SCALE = { sau: 100, so: 100, sao: 100, hundred: 100, hazaar: 1000, hajar: 1000, hazar: 1000, thousand: 1000, lakh: 100000, lak: 100000, lakhs: 100000 };
+const SCALE = {
+  sau: 100, so: 100, sao: 100, hundred: 100,
+  hazaar: 1000, hajar: 1000, hazar: 1000, thousand: 1000,
+  lakh: 100000, lak: 100000, lakhs: 100000,
+  // Telugu: vanda/vandala = hundred, veyyi/vela = thousand
+  vanda: 100, vandala: 100, veyyi: 1000, vela: 1000,
+};
 const FRACTION = { dedh: 1.5, derh: 1.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, adhaai: 2.5 };
 const BONUS_ADD = { saade: 0.5, sade: 0.5, saadhe: 0.5 };
 const BONUS_MUL = { sava: 1.25, sawa: 1.25, savaa: 1.25 };

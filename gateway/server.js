@@ -1,217 +1,306 @@
-// Production Gateway Server: Node.js + WebSocket
-// - GNANI_API_KEY and ALLOWED_ORIGIN from environment variables only
-// - GET /session returns a short-lived token (10 min, rate limited per IP)
-// - WebSocket upgrade rejected unless Origin matches ALLOWED_ORIGIN and the token is valid
-// - GET /health, graceful shutdown, zero logging of audio or transcripts, nothing written to disk
-// - routes audio to the Gnani adapter (TODO(GNANI) where formats are unknown)
-
-// ============================================================
-// Dependencies and Configuration
-// ============================================================
-
-import { createServer } from 'http';
+// Ledgent voice gateway: holds the Gnani key, authenticates the browser, bridges
+// realtime Prisma v3.0 STT and Timbre v3.0 TTS, and never writes audio or
+// transcripts to disk. Native Node HTTP + `ws`; no Docker, no framework.
+import { createServer } from 'node:http';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
-import rateLimit from 'express-rate-limit';
+import { loadEnv } from './env.js';
+import { openStt, synthesize, TTS_VOICE } from './gnani.adapter.js';
 
-// Environment configuration - ONLY from environment variables
-const GNANI_API_KEY = process.env.GNANI_API_KEY;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN;
+loadEnv();
 
-// Validate required environment variables
-if (!GNANI_API_KEY) {
-  console.error('FATAL: GNANI_API_KEY environment variable is required');
-  process.exit(1);
-}
-if (!ALLOWED_ORIGIN) {
-  console.error('FATAL: ALLOWED_ORIGIN environment variable is required');
-  process.exit(1);
-}
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const USAGE_FILE = path.join(HERE, 'usage.json');
+const TOKEN_TTL_MS = 10 * 60 * 1000;
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_MAX = 20;
 
-// Token configuration
-const TOKEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 10; // 10 requests per minute per IP
+export function createGateway(options = {}) {
+  const apiKey = options.apiKey ?? process.env.GNANI_API_KEY ?? '';
+  const allowedOrigins = String(options.allowedOrigin ?? process.env.ALLOWED_ORIGIN ?? '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  const voice = options.voice || TTS_VOICE;
+  const sttFactory = options.sttFactory || ((args) => openStt({ ...args, apiKey }));
+  const ttsFactory = options.ttsFactory || ((args) => synthesize({ ...args, apiKey, voice }));
+  const writeUsage = options.writeUsage !== false;
 
-// In-memory store for rate limiting and token tracking
-const tokenStore = new Map(); // ip -> { token, timestamp }
-const validTokens = new Set(); // set of currently valid tokens
+  const tokens = new Map();       // token -> { expires, ip, used }
+  const rate = new Map();         // ip -> { count, since }
+  const usage = {
+    startedAt: new Date().toISOString(),
+    sttSessions: 0,
+    sttFrames: 0,
+    sttTranscripts: 0,
+    ttsRequests: 0,
+    ttsChunks: 0,
+    errors: 0,
+  };
 
-// ============================================================
-// HTTP Server with Express-like routing (native http)
-// ============================================================
+  const saveUsage = throttle(() => {
+    if (!writeUsage) return;
+    // counts and timings only: never keys, audio or transcripts
+    try { fs.writeFileSync(USAGE_FILE, JSON.stringify(usage, null, 2)); } catch { /* best effort */ }
+  }, 2000);
 
-const server = createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const ip = req.socket.remoteAddress;
+  const cors = (res, origin) => {
+    const allow = allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || '';
+    if (allow) res.setHeader('Access-Control-Allow-Origin', allow);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Cache-Control', 'no-store');
+  };
 
-  // Rate limiting per IP
-  const now = Date.now();
-  const ipEntry = tokenStore.get(ip);
-  if (ipEntry && now - ipEntry.timestamp < RATE_LIMIT_WINDOW_MS) {
-    if (ipEntry.count >= RATE_LIMIT_MAX) {
-      res.writeHead(429, { 'Retry-After': '60' });
-      res.end('Too many requests');
+  const httpServer = createServer((req, res) => {
+    const url = new URL(req.url, 'http://localhost');
+    const origin = req.headers.origin || '';
+    const ip = req.socket.remoteAddress || 'unknown';
+    cors(res, origin);
+
+    if (req.method === 'GET' && url.pathname === '/health') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'ok',
+        stt: apiKey ? 'configured' : 'missing_key',
+        tts: apiKey ? 'configured' : 'missing_key',
+        model: 'prisma-v3.0',
+        ttsModel: 'timbre-v3.0',
+        ttsVoice: voice,
+        uptimeSec: Math.round(process.uptime()),
+      }));
       return;
     }
-    ipEntry.count++;
-    ipEntry.timestamp = now;
-  } else {
-    tokenStore.set(ip, { count: 1, timestamp: now });
-  }
 
-  // Clean up old entries periodically
-  if (now % (60 * 1000) < 1000) {
-    cleanupOldTokens();
-  }
-
-  // ============================================================
-  // GET /session - returns short-lived token
-  // ============================================================
-  if (req.method === 'GET' && url.pathname === '/session') {
-    const token = Math.random().toString(36).substring(2, 24) + Date.now().toString(36);
-    validTokens.add(token);
-    tokenStore.set(ip, { token, timestamp: now });
-
-    // Token expires in 10 minutes
-    const expires = now + TOKEN_TTL_MS;
-
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-    });
-    res.end(JSON.stringify({ token, expires }));
-    return;
-  }
-
-  // ============================================================
-  // GET /health - health check
-  // ============================================================
-  if (req.method === 'GET' && url.pathname === '/health') {
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-    });
-    res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
-    return;
-  }
-
-  // ============================================================
-  // Default 404
-  // ============================================================
-  res.writeHead(404);
-  res.end('Not Found');
-});
-
-// ============================================================
-// WebSocket Server
-// ============================================================
-
-const wss = new WebSocketServer({ server });
-
-wss.on('connection', (ws, request) => {
-  const url = request.url || '';
-  const origin = request.headers.origin || '';
-
-  // Check Origin matches ALLOWED_ORIGIN
-  if (origin !== ALLOWED_ORIGIN) {
-    ws.close(1008, 'Origin not allowed');
-    return;
-  }
-
-  // Check for query token (sent from client)
-  const search = new URL(request.url, 'http://localhost').searchParams;
-  const token = search.get('token');
-
-  if (!token || !validTokens.has(token)) {
-    ws.close(1008, 'Invalid or missing token');
-    return;
-  }
-
-  // Token is valid - allow connection
-  ws.token = token;
-  validTokens.delete(token); // Use single-use token
-
-  ws.on('message', (message) => {
-    // Route audio to Gnani adapter
-    // TODO(GNANI): Implement Gnani adapter integration for audio formats
-    // Currently just echoes back as a placeholder
-    if (typeof message === 'string') {
-      // Handle transcript messages
-      // In production, this would be sent to Gnani for processing
-      // For now, broadcast back to all connected clients
-      wss.clients.forEach((client) => {
-        if (client.readyState === ws.OPEN) {
-          client.send(message);
+    if (req.method === 'GET' && url.pathname === '/session') {
+      if (allowedOrigins.length && origin && !allowedOrigins.includes(origin)) {
+        res.writeHead(403, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'origin_not_allowed' }));
+        return;
+      }
+      const now = Date.now();
+      const r = rate.get(ip);
+      if (r && now - r.since < RATE_WINDOW_MS) {
+        if (r.count >= RATE_MAX) {
+          res.writeHead(429, { 'content-type': 'application/json', 'retry-after': '60' });
+          res.end(JSON.stringify({ error: 'rate_limited' }));
+          return;
         }
+        r.count += 1;
+      } else {
+        rate.set(ip, { count: 1, since: now });
+      }
+      const token = crypto.randomUUID();
+      tokens.set(token, { expires: now + TOKEN_TTL_MS, ip, used: false });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ token, expires: now + TOKEN_TTL_MS }));
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'not_found' }));
+  });
+
+  const wss = new WebSocketServer({ noServer: true });
+
+  httpServer.on('upgrade', (req, socket, head) => {
+    const url = new URL(req.url, 'http://localhost');
+    const origin = req.headers.origin || '';
+    const token = url.searchParams.get('token') || '';
+    const entry = tokens.get(token);
+
+    const reject = (code, reason) => {
+      socket.write(`HTTP/1.1 ${code} ${reason}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+      socket.destroy();
+    };
+
+    if (url.pathname !== '/voice') return reject(404, 'Not Found');
+    if (allowedOrigins.length && !allowedOrigins.includes(origin)) return reject(403, 'Origin Not Allowed');
+    if (!entry) return reject(401, 'Invalid Token');
+    if (entry.used) return reject(401, 'Token Used');
+    if (entry.expires < Date.now()) { tokens.delete(token); return reject(401, 'Token Expired'); }
+    if (entry.ip !== (req.socket.remoteAddress || 'unknown')) return reject(401, 'Token IP Mismatch');
+
+    entry.used = true;
+    tokens.delete(token);
+    wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+  });
+
+  wss.on('connection', (client) => {
+    let upstream = null;
+    let stopping = false;
+    let currentTts = null;
+    const ttsQueue = [];
+    let ttsBusy = false;
+    const send = (obj) => { try { if (client.readyState === 1) client.send(JSON.stringify(obj)); } catch { /* closed */ } };
+
+    const closeUpstream = (graceMs = 0) => {
+      if (!upstream) return;
+      const s = upstream;
+      upstream = null;
+      setTimeout(() => { try { s.close(); } catch { /* already closed */ } }, graceMs);
+    };
+
+    const runTtsQueue = () => {
+      if (ttsBusy || !ttsQueue.length) return;
+      const job = ttsQueue.shift();
+      ttsBusy = true;
+      usage.ttsRequests += 1;
+      let cancelled = false;
+      const ws = ttsFactory({
+        text: job.text,
+        lang: job.lang,
+        onStart: () => { if (!cancelled) send({ type: 'tts_start', id: job.id }); },
+        onChunk: (buf, seq) => {
+          if (cancelled) return;
+          usage.ttsChunks += 1;
+          send({ type: 'tts_audio', id: job.id, seq, audio: buf.toString('base64') });
+        },
+        onEnd: () => {
+          ttsBusy = false;
+          currentTts = null;
+          if (!cancelled) send({ type: 'tts_end', id: job.id });
+          saveUsage();
+          runTtsQueue();
+        },
+        onError: () => {
+          usage.errors += 1;
+          ttsBusy = false;
+          currentTts = null;
+          if (!cancelled) send({ type: 'error', where: 'tts', message: 'tts_unavailable' });
+          runTtsQueue();
+        },
       });
-    } else if (message instanceof ArrayBuffer) {
-      // Handle raw PCM audio - route to Gnani adapter
-      // TODO(GNANI): Implement proper Gnani adapter integration
-      // Currently just logs size
-      // console.log(`Received audio chunk: ${message.byteLength} bytes`);
-    }
-  });
+      currentTts = {
+        id: job.id,
+        cancel: () => {
+          cancelled = true;
+          try { ws.close(); } catch { /* closed */ }
+          ttsBusy = false;
+          currentTts = null;
+          runTtsQueue();
+        },
+      };
+    };
 
-  ws.on('close', () => {
-    validTokens.add(ws.token); // Return token pool on disconnect
-  });
-});
+    client.on('message', (data, isBinary) => {
+      if (isBinary) {
+        usage.sttFrames += 1;
+        if (upstream && upstream.readyState === 1) {
+          try { upstream.send(data); } catch { /* dropped frame */ }
+        }
+        return;
+      }
 
-// ============================================================
-// Helper Functions
-// ============================================================
+      let msg;
+      try { msg = JSON.parse(data.toString()); } catch { return; }
 
-function cleanupOldTokens() {
-  const now = Date.now();
-  for (const [ip, entry] of tokenStore) {
-    if (now - entry.timestamp > RATE_LIMIT_WINDOW_MS * 2) {
-      tokenStore.delete(ip);
-    }
-  }
-}
+      if (msg.type === 'start') {
+        closeUpstream();
+        if (!apiKey) { send({ type: 'error', where: 'stt', message: 'missing_api_key' }); return; }
+        usage.sttSessions += 1;
+        const ws = sttFactory({
+          lang: msg.lang || 'hi-IN',
+          auto: !!msg.auto,
+          format: msg.format === 'codemix' ? 'codemix' : 'transcribe',
+        });
+        upstream = ws;
+        ws.on('open', () => send({ type: 'connected', lang: msg.lang || 'hi-IN', format: msg.format || 'transcribe' }));
+        ws.on('message', (raw) => {
+          let frame;
+          try { frame = JSON.parse(raw.toString()); } catch { return; }
+          if (frame.type === 'transcript') {
+            usage.sttTranscripts += 1;
+            saveUsage();
+            // forward only what the UI needs; no audio, no session ids
+            send({
+              type: 'transcript',
+              text: frame.text || '',
+              detected_language_code: frame.detected_language_code || null,
+              segment_index: frame.segment_index ?? null,
+              latency_ms: frame.latency ?? null,
+              audio_duration_ms: frame.audio_duration_ms ?? null,
+            });
+          } else if (frame.type === 'processing') {
+            send({ type: 'processing' });
+          } else if (frame.type === 'connected') {
+            send({ type: 'stt_ready' });
+          } else if (frame.type === 'error') {
+            usage.errors += 1;
+            send({ type: 'error', where: 'stt', message: frame.message || 'stt_error' });
+          }
+        });
+        ws.on('error', () => { usage.errors += 1; send({ type: 'error', where: 'stt', message: 'stt_unreachable' }); });
+        ws.on('close', () => { if (!stopping) send({ type: 'stt_closed' }); });
+        return;
+      }
 
-// Graceful shutdown
-function gracefulShutdown() {
-  console.log('Shutting down gateway server...');
-  
-  // Close new connections
-  server.close(() => {
-    console.log('HTTP server closed');
-    
-    // Close all WebSocket connections
-    wss.clients.forEach((client) => {
-      client.close();
+      if (msg.type === 'commit') {
+        try { upstream?.send(JSON.stringify({ type: 'commit' })); } catch { /* closed */ }
+        return;
+      }
+
+      if (msg.type === 'stop') {
+        stopping = true;
+        try { upstream?.send(JSON.stringify({ type: 'commit' })); } catch { /* closed */ }
+        closeUpstream(800);
+        return;
+      }
+
+      if (msg.type === 'tts') {
+        if (!apiKey) { send({ type: 'error', where: 'tts', message: 'missing_api_key' }); return; }
+        ttsQueue.push({ id: msg.id ?? 0, text: String(msg.text || '').slice(0, 400), lang: msg.lang || 'hi-IN' });
+        runTtsQueue();
+        return;
+      }
+
+      if (msg.type === 'tts_cancel') {
+        ttsQueue.length = 0;
+        if (currentTts) currentTts.cancel();
+        return;
+      }
+
+      if (msg.type === 'ping') send({ type: 'pong' });
     });
-    
-    // Clear all valid tokens
-    validTokens.clear();
-    tokenStore.clear();
-    
-    process.exit(0);
+
+    client.on('close', () => {
+      stopping = true;
+      closeUpstream();
+      ttsQueue.length = 0;
+      if (currentTts) currentTts.cancel();
+      saveUsage();
+    });
   });
-  
-  // Force exit after 10 seconds if not closed
-  setTimeout(() => {
-    console.error('Forced exit after shutdown timeout');
-    process.exit(1);
-  }, 10000);
+
+  const close = () => new Promise((res) => {
+    for (const c of wss.clients) { try { c.terminate(); } catch { /* ignore */ } }
+    wss.close(() => httpServer.close(() => res()));
+  });
+
+  return { httpServer, wss, usage, close, allowedOrigins, hasKey: !!apiKey, voice };
 }
 
-// Handle SIGTERM and SIGINT
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+function throttle(fn, ms) {
+  let last = 0;
+  return () => {
+    const now = Date.now();
+    if (now - last < ms) return;
+    last = now;
+    fn();
+  };
+}
 
-// Start server
-const PORT = process.env.GATEWAY_PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Gateway server listening on port ${PORT}`);
-  console.log(`ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}`);
-  console.log('Endpoints:');
-  console.log('  GET  /session - short-lived token (10 min TTL)');
-  console.log('  GET  /health  - health check');
-  console.log('  WS   /voice   - WebSocket with origin + token auth');
-  console.log('  Rate limit: 10 requests/minute per IP');
-});
-
-// Exports for testing
-export { server, wss, gracefulShutdown };
+// ---- start when run directly ----
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.GATEWAY_PORT || process.env.PORT || 8787);
+  const gw = createGateway();
+  gw.httpServer.listen(port, () => {
+    console.log(`Ledgent gateway on http://localhost:${port}`);
+    console.log(`  key: ${gw.hasKey ? 'present' : 'MISSING (set GNANI_API_KEY in gateway/.env)'}`);
+    console.log(`  origin allowlist: ${gw.allowedOrigins.length ? gw.allowedOrigins.join(', ') : '(any)'}`);
+    console.log(`  endpoints: /health, /session, ws /voice`);
+  });
+  const bye = async () => { await gw.close(); process.exit(0); };
+  process.on('SIGTERM', bye);
+  process.on('SIGINT', bye);
+}

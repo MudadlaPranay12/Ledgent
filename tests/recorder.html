@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ledgent — real-audio phrase recorder</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 24px; background: #f6f1e6; color: #2b2118; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 20px; color: #6b5844; font-size: 14px; }
+  .card { background: #fffdf7; border: 1px solid #e3d7c2; border-radius: 10px; padding: 16px; margin-bottom: 16px; max-width: 760px; }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #7a6750; margin-bottom: 4px; }
+  input, select, textarea, button { font: inherit; }
+  input, select, textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #d9cbb2; border-radius: 8px; background: #fff; }
+  textarea { min-height: 60px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > div { flex: 1 1 200px; }
+  button { padding: 9px 14px; border-radius: 8px; border: 1px solid #6b4b2f; background: #6b4b2f; color: #fff; cursor: pointer; }
+  button.secondary { background: #fff; color: #6b4b2f; }
+  button:disabled { opacity: .5; cursor: default; }
+  #meter { height: 8px; background: #eadfcd; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  #meterFill { height: 100%; width: 0%; background: #b3402f; transition: width .08s linear; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee3d2; vertical-align: top; }
+  code { font-size: 12px; }
+  .warn { font-size: 12px; color: #8a4b1e; }
+</style>
+</head>
+<body>
+<h1>Ledgent — real-audio phrase recorder</h1>
+<p class="lead">Records your own test phrases for the language matrix. Everything stays on this machine: recordings are downloaded, the manifest lives in localStorage. Use synthetic or your own scripted phrases — never real customer calls.</p>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <label for="lang">Language</label>
+      <select id="lang">
+        <option value="hi-IN">Hindi · hi-IN</option>
+        <option value="en-IN">English · en-IN</option>
+        <option value="te-IN">Telugu · te-IN</option>
+        <option value="ta-IN">Tamil · ta-IN</option>
+        <option value="mr-IN">Marathi · mr-IN</option>
+        <option value="bn-IN">Bengali · bn-IN</option>
+        <option value="gu-IN">Gujarati · gu-IN</option>
+        <option value="kn-IN">Kannada · kn-IN</option>
+        <option value="pa-IN">Punjabi · pa-IN</option>
+        <option value="ml-IN">Malayalam · ml-IN</option>
+      </select>
+    </div>
+    <div>
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="credit">1 · Credit</option>
+        <option value="payment">2 · Payment</option>
+        <option value="correction">3 · Correction</option>
+        <option value="query">4 · Balance query</option>
+        <option value="ambiguity">5 · Same-name ambiguity</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div style="flex:1 1 100%">
+      <label for="expected">Expected transcript (what you actually said)</label>
+      <input id="expected" placeholder="e.g. Ramesh ka teen sau chaalis udhaar" />
+    </div>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+    <button id="rec">● Record</button>
+    <button id="stop" class="secondary" disabled>■ Stop &amp; save</button>
+    <span id="state" class="warn"></span>
+  </div>
+  <div id="meter"><div id="meterFill"></div></div>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+    <strong style="font-size:14px">Manifest</strong>
+    <div style="display:flex; gap:8px">
+      <button id="export" class="secondary">Export JSON</button>
+      <button id="clear" class="secondary">Clear</button>
+    </div>
+  </div>
+  <table id="table">
+    <thead><tr><th>#</th><th>Language</th><th>Category</th><th>Expected</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const KEY = 'ledgent_recorder_manifest';
+const $ = (id) => document.getElementById(id);
+let stream = null, recorder = null, chunks = [], timer = null, startedAt = 0, ctx = null, analyser = null, raf = 0;
+
+const manifest = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+const saveManifest = (m) => localStorage.setItem(KEY, JSON.stringify(m));
+
+function render() {
+  const m = manifest();
+  const tbody = $('table').querySelector('tbody');
+  tbody.innerHTML = '';
+  m.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i + 1}</td><td>${row.lang}</td><td>${row.category}</td><td>${row.expected}</td>
+      <td><code>${row.file}</code></td><td>${row.note || ''}</td>`;
+    tbody.appendChild(tr);
+  });
+  if (!m.length) tbody.innerHTML = '<tr><td colspan="6" style="color:#8a7658">No recordings yet.</td></tr>';
+}
+render();
+
+$('rec').addEventListener('click', async () => {
+  $('state').textContent = '';
+  if (!$('expected').value.trim()) { $('state').textContent = 'Enter the expected transcript first.'; return; }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, noiseSuppression: true, echoCancellation: true, autoGainControl: true } });
+  } catch (e) {
+    $('state').textContent = 'Microphone blocked: ' + e.name;
+    return;
+  }
+  chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const name = `${$('lang').value}_${$('category').value}_${stamp}.webm`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    const m = manifest();
+    m.push({ lang: $('lang').value, category: $('category').value, expected: $('expected').value.trim(), file: name, bytes: blob.size, note: 'recorded locally' });
+    saveManifest(m);
+    render();
+    $('state').textContent = `Saved ${name} (${Math.round(blob.size / 1024)} KB)`;
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+  };
+  recorder.start();
+  startedAt = Date.now();
+  $('rec').disabled = true;
+  $('stop').disabled = false;
+  $('state').textContent = 'Recording…';
+
+  // level meter
+  ctx = new AudioContext();
+  const src = ctx.createMediaStreamSource(stream);
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 1024;
+  src.connect(analyser);
+  const buf = new Uint8Array(analyser.frequencyBinCount);
+  const loop = () => {
+    analyser.getByteTimeDomainData(buf);
+    let peak = 0;
+    for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+    $('meterFill').style.width = Math.min(100, (peak / 128) * 200) + '%';
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+  timer = setInterval(() => {
+    $('state').textContent = `Recording… ${((Date.now() - startedAt) / 1000).toFixed(1)}s`;
+  }, 100);
+});
+
+$('stop').addEventListener('click', () => {
+  if (recorder && recorder.state !== 'inactive') recorder.stop();
+  clearInterval(timer);
+  cancelAnimationFrame(raf);
+  if (ctx) { ctx.close(); ctx = null; }
+  $('meterFill').style.width = '0%';
+  $('rec').disabled = false;
+  $('stop').disabled = true;
+});
+
+$('export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(manifest(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ledgent-recorder-manifest.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+});
+
+$('clear').addEventListener('click', () => {
+  if (!confirm('Clear the local manifest? Downloaded audio files stay on disk.')) return;
+  saveManifest([]);
+  render();
+});
+</script>
+</body>
+</html>

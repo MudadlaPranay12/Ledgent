@@ -8,9 +8,16 @@
     "e2e": "node scripts/e2e.mjs",
     "check": "npm test && npm run e2e",
     "start": "node scripts/serve.mjs",
+    "gateway": "node gateway/server.js",
+    "smoke": "node scripts/gnani-smoke.mjs",
+    "benchmark": "node scripts/stt-benchmark.mjs",
     "phrases": "node tests/phrases.gen.mjs && node tests/phrases.test.mjs"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
-    "playwright": "^1.58.0"
+    "playwright": "^1.58.0",
+    "ws": "^8.23.0"
   }
 }

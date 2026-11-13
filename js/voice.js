@@ -85,11 +85,9 @@ export function speak(text, lang = 'hi-IN', onStart = null) {
     u.lang = lang;
     u.rate = 0.98;
     u.pitch = 1;
-    if (onStart) {
-      u.onstart = () => { try { onStart(); } catch { /* ignore */ } };
-      // Some headless engines never fire onstart; still mark the request.
-      setTimeout(() => { try { onStart(); } catch { /* ignore */ } }, 400);
-    }
+    // Only the real onstart event counts as "first audio": there is no invented
+    // 400 ms estimate here, because latency numbers must be measured.
+    if (onStart) u.onstart = () => { try { onStart(); } catch { /* ignore */ } };
     window.speechSynthesis.speak(u);
     return true;
   } catch { return false; }

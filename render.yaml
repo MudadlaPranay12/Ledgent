@@ -1,15 +1,18 @@
-# render.yaml for Gateway Service
+# Render blueprint for the Ledgent voice gateway (native Node, no Docker).
 services:
   - type: web
     name: ledgent-gateway
-    env: node
-    envVars:
-      GNANI_API_KEY: fromSecret: GNANI_API_KEY
-      ALLOWED_ORIGIN: fromSecret: ALLOWED_ORIGIN
-      GATEWAY_PORT: "3000"
+    runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: cd gateway && npm install --omit=dev
     startCommand: node gateway/server.js
     healthCheckPath: /health
-    # Auto-deploy on git push
-    # Dockerfile: gateway/Dockerfile
+    envVars:
+      - key: GNANI_API_KEY
+        sync: false          # set in the Render dashboard, never in git
+      - key: ALLOWED_ORIGIN
+        sync: false          # e.g. https://ledgent.netlify.app
+      - key: GATEWAY_PORT
+        value: "10000"
+      - key: GNANI_TTS_VOICE
+        value: Shivani

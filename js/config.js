@@ -2,7 +2,7 @@
 const isBrowser = typeof window !== 'undefined' && typeof location !== 'undefined';
 
 const VALID_VOICE = ['dev', 'gnani', 'mock'];
-const VALID_LANGS = ['hi-IN', 'en-IN', 'te-IN', 'ta-IN', 'mr-IN', 'bn-IN', 'gu-IN', 'kn-IN'];
+const VALID_LANGS = ['hi-IN', 'en-IN', 'te-IN', 'ta-IN', 'mr-IN', 'bn-IN', 'gu-IN', 'kn-IN', 'pa-IN', 'ml-IN', 'auto'];
 
 function param(name) {
   if (!isBrowser) return null;
@@ -17,23 +17,29 @@ function stored(key) {
 const urlVoice = param('voice');
 const urlLang = param('lang');
 
-export const VOICE = VALID_VOICE.includes(urlVoice) ? urlVoice : (VALID_VOICE.includes(stored('ledgent_voice')) ? stored('ledgent_voice') : 'gnani');
+export const VOICE = VALID_VOICE.includes(urlVoice)
+  ? urlVoice
+  : (VALID_VOICE.includes(stored('ledgent_voice')) ? stored('ledgent_voice') : 'gnani');
 
-export const LANG = VALID_LANGS.includes(urlLang) ? urlLang : (VALID_LANGS.includes(stored('ledgent_lang')) ? stored('ledgent_lang') : 'hi-IN');
+export const LANG = VALID_LANGS.includes(urlLang)
+  ? urlLang
+  : (VALID_LANGS.includes(stored('ledgent_lang')) ? stored('ledgent_lang') : 'hi-IN');
 
-export const GATEWAY_URL = (param('gw') || stored('ledgent_gateway') || '').replace(/\/$/, '');
+// The gateway runs beside the app in development. A deployed app passes ?gw= or
+// stores the URL; the key never reaches the browser.
+const DEV_GATEWAY = isBrowser && ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://localhost:8787' : '';
+export const GATEWAY_URL = (param('gw') || stored('ledgent_gateway') || DEV_GATEWAY).replace(/\/$/, '');
 
-// Optional LLM fallback lane. Off by default; only used when the rules fail and
-// the gateway explicitly advertises /llm.
 export const CONFIG = {
   voice: VOICE,
   lang: LANG,
   gatewayUrl: GATEWAY_URL,
-  healthTimeoutMs: 900,
+  healthTimeoutMs: 1500,
   llmEnabled: param('llm') === '1' || stored('ledgent_llm') === '1',
   llmTimeoutMs: 1500,
   maxWidth: 430,
   langs: VALID_LANGS,
+  sttFormat: param('format') === 'codemix' ? 'codemix' : 'transcribe',
 };
 
 if (isBrowser) {
