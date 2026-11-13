@@ -31,6 +31,7 @@ const els = {
   tabs: $('tabs'), page: $('page'), custName: $('custName'), custLabel: $('custLabel'), custBal: $('custBal'),
   lines: $('lines'), heard: $('heard'), heardText: $('heardText'), cursor: document.querySelector('#heard .cursor'),
   heardRaw: $('heardRaw'), heardRawText: $('heardRawText'),
+  langMenu: $('langMenu'), langTrace: $('langTrace'),
   chips: $('chips'), draft: $('draft'), draftText: $('draftText'), choices: $('choices'),
   confirmBtn: $('confirmBtn'), cancelBtn: $('cancelBtn'),
   typeForm: $('typeForm'), typeInput: $('typeInput'),
@@ -46,7 +47,7 @@ const S = {
   activeCustomerId: null, holding: false, voice: null, lang: CONFIG.lang,
   lastTxnId: null, flags: [], lat: {}, finalLock: false, typingTimer: null, seenFinal: false,
   detectedLang: null, disclosed: false,
-  rawTranscript: '', rawTranscriptLang: '', lastParse: null,
+  rawTranscript: '', rawTranscriptLang: '', lastParse: null, sttRequested: '',
 };
 
 // ---------------------------------------------------------------- status / toast
@@ -78,6 +79,7 @@ function setRawTranscript(text, lang, warn) {
   els.heardRawText.textContent = S.rawTranscriptLang
     ? `${S.rawTranscript}  ·  ${S.rawTranscriptLang}`
     : S.rawTranscript;
+  renderLangTrace();
   if (warn) {
     const span = document.createElement('span');
     span.className = 'raw-warn';
@@ -438,6 +440,59 @@ function renderChips() {
   }
 }
 
+function selectLanguage(code) {
+  S.lang = chooseLang(code);
+  S.detectedLang = null;
+  S.voice?.setLang?.(S.lang);
+  closeLangMenu();
+  const name = LANGS.find((l) => l.code === S.lang)?.name || S.lang;
+  els.langLbl.textContent = langLabel(S.lang);
+  renderAll();
+  toast(`${name} · ${S.lang}`, 2000);
+  speakNow(name);
+}
+
+function renderLangMenu() {
+  els.langMenu.innerHTML = '';
+  for (const l of LANGS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'option');
+    b.setAttribute('aria-selected', String(l.code === S.lang));
+    const name = document.createElement('span');
+    name.textContent = l.name;
+    const codeEl = document.createElement('code');
+    codeEl.textContent = l.code;
+    b.append(name, codeEl);
+    b.addEventListener('click', () => selectLanguage(l.code));
+    els.langMenu.append(b);
+  }
+}
+function toggleLangMenu() {
+  if (els.langMenu.hidden) {
+    renderLangMenu();
+    els.langMenu.hidden = false;
+    els.langBtn.setAttribute('aria-expanded', 'true');
+  } else {
+    closeLangMenu();
+  }
+}
+function closeLangMenu() {
+  if (!els.langMenu || els.langMenu.hidden) return;
+  els.langMenu.hidden = true;
+  els.langBtn.setAttribute('aria-expanded', 'false');
+}
+
+// Compact, non-secret language trace: what was selected, what the socket asked
+// for, what Prisma reported. Also mirrored in the debug panel.
+function renderLangTrace() {
+  if (!els.langTrace) return;
+  if (!S.rawTranscript || !S.sttRequested) { els.langTrace.hidden = true; return; }
+  const parts = [`UI ${S.lang}`, `WS→ ${S.sttRequested}`, `Prisma ↺ ${S.detectedLang || '—'}`];
+  els.langTrace.textContent = parts.join('  ·  ');
+  els.langTrace.hidden = false;
+}
+
 function renderAll() {
   renderTabs();
   renderPage();
@@ -445,6 +500,7 @@ function renderAll() {
   els.langLbl.textContent = langLabel(S.lang);
   renderChrome();
   if (S.voice) renderBadge();
+  renderLangTrace();
   renderDebug();
 }
 
@@ -456,7 +512,10 @@ function renderDebug() {
     `voice: ${v.mode || '?'} — ${v.reason || ''}`,
     `raw transcript: ${S.rawTranscript ? S.rawTranscript.slice(0, 40) : '—'} (${S.rawTranscriptLang || '—'})`,
     `parse: ${S.lastParse ? S.lastParse.intent : '—'}`,
-    `lang: ${S.lang}   today: ${S.today}`,
+    `selected language: ${S.lang}`,
+    `stt requested: ${S.sttRequested || '—'}   detected: ${S.detectedLang || '—'}`,
+    `today: ${S.today}`,
+    `tts language: ${S.lang === 'auto' ? (S.detectedLang || 'hi-IN') : S.lang}`,
     `speech→transcript: ${d(S.lat.speechEnd, S.lat.transcriptAt)}`,
     `transcript→parse: ${d(S.lat.transcriptAt, S.lat.parsedAt)}`,
     `parse→tts: ${d(S.lat.parsedAt, S.lat.ttsAt)}`,
@@ -620,6 +679,11 @@ async function handleUtterance(text, source = 'chip') {
     }
   }
   if (source === 'voice') setRawTranscript(t, S.detectedLang, warn);
+  if (warn) {
+    // Never let a wrong-language recognition look like a success.
+    setStatus('needs', tr(S.lang, 'stTranscript'));
+    toast(warn, 6000);
+  }
   setHeard(t);
   setStatus('thinking', tr(S.lang, 'stThink'));
 
@@ -760,10 +824,15 @@ async function initVoice() {
       S.finalLock = true;
       S.lat.transcriptAt = performance.now();
       if (meta?.detected) S.detectedLang = meta.detected;
+      if (meta?.requested) S.sttRequested = meta.requested;
       setRawTranscript(t, meta?.detected || S.detectedLang);
       S.holding = false;
       document.body.classList.remove('listening');
       handleUtterance(t, 'voice').finally(() => { setTimeout(() => { S.finalLock = false; }, 300); });
+    },
+    onSession: (requested) => {
+      S.sttRequested = requested || '';
+      renderDebug();
     },
     onDetected: (code) => {
       if (!code) return;
@@ -860,18 +929,16 @@ function initChrome() {
     renderDebug();
   });
 
-  els.langBtn.addEventListener('click', () => {
-    const code = nextLang(S.lang);
-    S.lang = chooseLang(code);
-    S.detectedLang = null;
-    S.voice?.setLang?.(S.lang);
-    els.langLbl.textContent = langLabel(S.lang);
-    const name = LANGS.find((l) => l.code === S.lang)?.name || S.lang;
-    toast(`Language: ${name}`, 2000);
-    renderAll();
-    // The language name is spoken in its own language, e.g. "తెలుగు".
-    speakNow(name);
+  // Explicit chooser instead of a cycling button: one click can no longer land
+  // on the wrong language and silently keep Hindi recognition.
+  els.langBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleLangMenu();
   });
+  document.addEventListener('click', (e) => {
+    if (!els.langMenu.hidden && !els.langMenu.contains(e.target) && e.target !== els.langBtn) closeLangMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLangMenu(); });
 
   els.verifyBtn.addEventListener('click', async () => {
     const v = await S.ledger.verify();

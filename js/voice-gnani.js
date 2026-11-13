@@ -27,8 +27,8 @@ export async function probeGateway(baseUrl, timeoutMs = 1200) {
 const wsUrl = (base) => base.replace(/^http/, 'ws');
 
 export class GatewayVoice {
-  constructor({ baseUrl, lang = 'hi-IN', onPartial, onFinal, onError, onDetected, onFirstAudio } = {}) {
-    Object.assign(this, { baseUrl, lang, onPartial, onFinal, onError, onDetected, onFirstAudio });
+  constructor({ baseUrl, lang = 'hi-IN', onPartial, onFinal, onError, onDetected, onFirstAudio, onSession } = {}) {
+    Object.assign(this, { baseUrl, lang, onPartial, onFinal, onError, onDetected, onFirstAudio, onSession });
     this.ws = null;
     this.mic = null;
     this.active = false;
@@ -61,11 +61,20 @@ export class GatewayVoice {
   _onMessage(ev) {
     if (typeof ev.data !== 'string') return;
     let msg; try { msg = JSON.parse(ev.data); } catch { return; }
-    if (msg.type === 'connected') { this.ready = true; return; }
+    if (msg.type === 'connected') {
+      this.ready = true;
+      this.requested = msg.requested_language || msg.lang || this.lang;
+      this.onSession?.(this.requested);
+      return;
+    }
     if (msg.type === 'processing') return;
     if (msg.type === 'transcript') {
       if (msg.detected_language_code) this.onDetected?.(msg.detected_language_code);
-      this.onFinal?.(msg.text || '', { detected: msg.detected_language_code, latencyMs: msg.latency_ms });
+      this.onFinal?.(msg.text || '', {
+        detected: msg.detected_language_code,
+        requested: msg.requested_language || this.requested || this.lang,
+        latencyMs: msg.latency_ms,
+      });
       return;
     }
     if (msg.type === 'error') { this.onError?.(msg.where === 'tts' ? 'tts_unavailable' : (msg.message || 'voice_error')); return; }

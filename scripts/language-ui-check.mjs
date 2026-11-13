@@ -23,9 +23,9 @@ await page.evaluate(() => {
 const checks = [];
 const check = (name, pass, detail = '') => { checks.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`); };
 
-// Hindi (default) → English → Telugu via the language button.
+// Pick Telugu from the language chooser (no cycling).
 await page.locator('#langBtn').click();
-await page.locator('#langBtn').click();
+await page.locator('#langMenu button', { hasText: 'te-IN' }).first().click();
 await page.waitForTimeout(200);
 const langCode = await page.evaluate(() => window.__ledgent.S.lang);
 check('language switched to Telugu', langCode === 'te-IN', langCode);

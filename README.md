@@ -180,6 +180,45 @@ the operator chooses AUTO.
 Punjabi and Malayalam lexicon entries are best-effort and marked `// unverified`
 in `js/lexicon/pa.js` and `ml.js`; they were not audio-tested here.
 
+### Microphone sessions are tested through the real capture path
+
+`scripts/mic-session-check.mjs` drives Chromium with a fake audio device
+(`--use-file-for-fake-audio-capture`), so the browser really calls
+`getUserMedia`, the AudioWorklet really resamples to 16 kHz PCM16, the frames
+travel over the gateway WebSocket, and Prisma really receives them. The audio
+*content* is Timbre-synthesised (no human recordings are available here); every
+other link is the production path.
+
+The UI now shows the language chain so a wrong language can never hide again:
+
+```
+Prisma suna   సురేష్ కి ... · te-IN
+UI te-IN  ·  WS→ te-IN  ·  Prisma ↺ te-IN
+```
+
+The gateway echoes the language it actually requested back to the browser
+(`requested_language` on `connected` and on every `transcript`), and selecting a
+language is an explicit chooser rather than a cycling button — a stray click can
+no longer leave the app on Hindi while the operator believes Telugu is active.
+
+Measured on this machine, one held-button session per language:
+
+| Selected | Gateway asked Prisma | Prisma returned | Transcript |
+| --- | --- | --- | --- |
+| te-IN | te-IN | te-IN | దానికి 340 రూపాయల అప్పు. |
+| hi-IN | hi-IN | hi-IN | 340 उधार। |
+| en-IN | en-IN | en-IN | 340 credit. |
+| ta-IN | ta-IN | ta-IN | சுரேஷுக்கு 340 கடன். |
+| kn-IN | kn-IN | kn-IN | ಸುರೇಶ್ ಗೆ 340 ಸಾಲ. |
+| ml-IN | ml-IN | ml-IN | സുരേഷിന് 340 കടം. |
+| bn-IN | bn-IN | bn-IN | সুরেশের 340 ধার। |
+| mr-IN | mr-IN | mr-IN | सुरेशला 340 उधार. |
+
+All eight ended with a transcript in the expected script. The recogniser is not
+perfect on synthetic TTS audio (the Telugu clip lost the name "సురేష్" and heard
+"దానికి"); that is recognition quality, not a language-routing failure, and it is
+reported as-is.
+
 ### One active language drives everything
 
 `S.lang` is the single source of truth. When the shopkeeper picks Telugu the
@@ -259,6 +298,8 @@ node scripts/verify-languages.mjs                 # real audio, all 8 languages
 node scripts/verify-languages.mjs --langs ml-IN   # re-check one, keeps earlier rows
 node scripts/transcript-display-check.mjs         # Playwright: transcript survives a parse failure
 node scripts/language-ui-check.mjs                # Playwright: Telugu UI, labels, TTS tag
+node scripts/make-mic-fixture.mjs                 # build a WAV for the fake mic
+node scripts/mic-session-check.mjs te-IN tests/fixtures/te-mic.wav
 node scripts/verify-tts-languages.mjs             # real Timbre language round-trip, 8 languages
 ```
 
@@ -312,12 +353,12 @@ expects ambiguity on bare "Ramesh" rows.
 
 Not done / not verified:
 
-* **No live microphone session was tested.** This machine has no microphone in
-  the automated environment, so the mic → Prisma → UI path is implemented and
-  unit-tested at the gateway boundary but not exercised end-to-end by a human
-  voice. The eight-language evidence above used Timbre-synthesised audio; the
-  displayed-transcript contract was checked in Chromium by injecting the exact
-  Prisma strings (screenshot `tests/artifacts/06-transcript-preserved.png`).
+* **No human voice has gone through the microphone.** The mic path itself is
+  exercised end-to-end (getUserMedia → AudioWorklet → gateway → Prisma) using a
+  WAV fed to Chromium's fake audio device, but that audio is Timbre-synthesised.
+  Recognition quality on real people, accents and shop noise is unmeasured.
+  Screenshots: `06-transcript-preserved.png`, `07-telugu-ui.png`,
+  `08-real-mic-telugu.png`.
 * **`indic-auto` is unreliable for Kannada and Marathi** in this test: it
   misdetected Kannada as Hindi. Explicit language selection was correct for all
   eight languages, so the default is an explicit choice.

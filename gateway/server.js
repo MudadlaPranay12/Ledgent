@@ -205,7 +205,8 @@ export function createGateway(options = {}) {
           format: msg.format === 'codemix' ? 'codemix' : 'transcribe',
         });
         upstream = ws;
-        ws.on('open', () => send({ type: 'connected', lang: msg.lang || 'hi-IN', format: msg.format || 'transcribe' }));
+        const requested = msg.lang || 'hi-IN';
+        ws.on('open', () => send({ type: 'connected', lang: requested, requested_language: requested, format: msg.format || 'transcribe' }));
         ws.on('message', (raw) => {
           let frame;
           try { frame = JSON.parse(raw.toString()); } catch { return; }
@@ -216,6 +217,7 @@ export function createGateway(options = {}) {
             send({
               type: 'transcript',
               text: frame.text || '',
+              requested_language: requested,
               detected_language_code: frame.detected_language_code || null,
               segment_index: frame.segment_index ?? null,
               latency_ms: frame.latency ?? null,

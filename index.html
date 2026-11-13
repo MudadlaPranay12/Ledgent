@@ -19,9 +19,10 @@
         <button id="remindersBtn" class="tool" type="button" aria-label="Reminders">
           <span class="ico">🔔</span><span class="lbl">Reminders</span>
         </button>
-        <button id="langBtn" class="tool" type="button" aria-label="Language">
+        <button id="langBtn" class="tool" type="button" aria-label="Language" aria-haspopup="listbox" aria-expanded="false">
           <span class="ico">अ</span><span class="lbl" id="langLbl">हिं</span>
         </button>
+        <div id="langMenu" role="listbox" aria-label="Choose language" hidden></div>
         <button id="kbdBtn" class="tool" type="button" aria-label="Type instead">
           <span class="ico">⌨</span><span class="lbl">Type</span>
         </button>
@@ -55,6 +56,7 @@
     <section id="heard" aria-live="polite">
       <span id="heardText">Dabaake boliye · hold anywhere</span><span class="cursor"></span>
       <div id="heardRaw" hidden><span class="raw-lbl">Prisma suna</span> <span id="heardRawText"></span></div>
+      <div id="langTrace" hidden></div>
     </section>
 
     <section id="chips" aria-label="Examples">

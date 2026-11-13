@@ -83,6 +83,12 @@ button { font: inherit; cursor: pointer; border: 0; }
 .cursor { display: inline-block; width: 2px; height: 1.05em; background: var(--gold); vertical-align: text-bottom; margin-left: 2px; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+#langMenu { position: absolute; top: 54px; right: 10px; z-index: 40; background: #fffdf7; border: 1px solid #d9cbb2; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.25); padding: 6px; min-width: 190px; max-height: 60vh; overflow: auto; }
+#langMenu button { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px; border: 0; background: none; color: #3a2a1c; font: 15px system-ui, -apple-system, "Segoe UI", sans-serif; text-align: left; border-radius: 8px; }
+#langMenu button:hover, #langMenu button:focus-visible { background: #f0e5d2; }
+#langMenu button[aria-selected="true"] { background: #6b4b2f; color: #fff; }
+#langMenu code { font-size: 11px; opacity: .7; }
+#langTrace { margin-top: 4px; font: 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: rgba(255,255,255,.75); }
 #heardRaw { margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,.35); font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: rgba(255,255,255,.85); }
 #heardRaw .raw-lbl { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin-right: 4px; }
 body.listening #heard { border-color: var(--gold); background: rgba(217,164,65,.18); }

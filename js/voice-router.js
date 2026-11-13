@@ -76,7 +76,7 @@ function withGateway(engine) {
 /**
  * @returns {{mode:string, reason:string, badge:string, engine:object|null, setLang:Function}}
  */
-export async function resolveVoice({ onPartial, onFinal, onError, onDetected, onFirstAudio, lang }) {
+export async function resolveVoice({ onPartial, onFinal, onError, onDetected, onFirstAudio, onSession, lang }) {
   const wants = VOICE; // 'dev' | 'gnani' | 'mock'
 
   if (wants === 'mock') {
@@ -89,7 +89,7 @@ export async function resolveVoice({ onPartial, onFinal, onError, onDetected, on
     if (health.ok) {
       Object.assign(LOG, { mode: 'gnani', reason: health.reason, badge: 'GNANI VOICE' });
       const engine = new GatewayVoice({
-        baseUrl: CONFIG.gatewayUrl, onPartial, onFinal, onError, onDetected, onFirstAudio, lang,
+        baseUrl: CONFIG.gatewayUrl, onPartial, onFinal, onError, onDetected, onFirstAudio, onSession, lang,
       });
       return finalise(LOG, { engine: withGateway(engine) });
     }
