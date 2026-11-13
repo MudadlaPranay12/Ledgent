@@ -151,21 +151,47 @@ Prisma is asked for one language at a time, or `indic-auto`. The parser has
 lexicons for ten languages plus Hinglish/English mixing. "Tested" below means
 **automated parser tests**, except where real audio is named explicitly.
 
-| Language | Prisma code | Parser lexicon | Automated tests | Real audio through Prisma |
-| --- | --- | --- | --- | --- |
-| Hindi / Hinglish | hi-IN | yes | yes (phrases + adversarial + matrix) | yes — "रमेश का 340 उधार।" |
-| English | en-IN | yes | yes | synthetic phrase only |
-| Telugu | te-IN | yes (basic number words) | yes | synthetic proxy mispronounced one word — see limitations |
-| Tamil | ta-IN | yes | yes | no |
-| Marathi | mr-IN | yes | yes | no |
-| Bengali | bn-IN | yes | yes | no |
-| Gujarati | gu-IN | yes | yes | no |
-| Kannada | kn-IN | yes | yes | no |
-| Punjabi | pa-IN | added (unverified) | yes | no |
-| Malayalam | ml-IN | added (unverified) | yes | no |
+Speech recognition and transaction parsing are separate concerns and are tested
+separately. `scripts/verify-languages.mjs` speaks a natural sentence with Timbre,
+streams that audio back through Prisma, and then asks the parser what it made of
+the transcript. Real output (`tests/language-evidence.json`):
 
-Nothing in this table is native-speaker validated. Punjabi and Malayalam entries
-are best-effort and marked `// unverified` in `js/lexicon/pa.js` and `ml.js`.
+| Language | Audio received | Transcript | Explicit lang honoured | Auto (indic-auto) | Parsed | Transcript kept |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hindi | yes (90 frames) | "रमेश का 340 रुपये उधार लिख दो।" | yes | hi-IN ✓ | transaction, ₹340 credit | yes |
+| English | yes (75) | "Give Suresh 300 rupees credit." | yes | en-IN ✓ | ₹300 credit, Suresh | yes |
+| Telugu | yes (65) | "గోపాల్ కి 300 రూపాయల అప్పు." | yes | te-IN ✓ | ₹300 credit, Gopal | yes |
+| Tamil | yes (68) | "ரமேஷுக்கு 300 ரூபாய் கடன்." | yes | ta-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
+| Kannada | yes (63) | "ರಮೇಶ್ ಗೆ 300 ರೂಪಾಯಿ ಸಾಲ." | yes | **kn-IN ✗** (heard Hindi) | ₹300 credit, Ramesh (ambiguous) | yes |
+| Malayalam | yes (65) | "രമേശിന് 300 രൂപ കടം." | yes | ml-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
+| Bengali | yes (55) | "রমেশের 300 টাকা বাকি।" | yes | bn-IN ✓ | ₹300 credit, Ramesh (ambiguous) | yes |
+| Marathi | yes (73) | "रमेशला 300 रुपये उधार." | yes | **mr-IN ✗** (heard Hindi) | ₹300 credit, Ramesh (ambiguous) | yes |
+
+"Ramesh (ambiguous)" is correct behaviour: the demo data has two shopkeepers
+named Ramesh, so Ledgent asks which one instead of picking.
+
+Two honest caveats about this table. First, the audio is **Timbre-synthesised**,
+not a human voice, so it is a development proxy and not native-speaker
+validation. Second, **`indic-auto` misidentified Kannada as Hindi** (the returned
+transcript was Devanagari and garbled) and reported Hindi for Marathi. Explicit
+language selection was correct for all eight, and that is what the UI uses unless
+the operator chooses AUTO.
+
+Punjabi and Malayalam lexicon entries are best-effort and marked `// unverified`
+in `js/lexicon/pa.js` and `ml.js`; they were not audio-tested here.
+
+### Recognition is not parsing
+
+The transcript is a first-class result. `handleUtterance()` always stores the raw
+sentence (`S.rawTranscript`) and shows it in a `Prisma suna` line under the
+listening strip, plus the detected language. If the parser cannot turn it into a
+transaction, the UI keeps the transcript on screen and asks for the missing
+pieces ("Suna: \"…\". Kaunsa customer, kitna, udhaar ya payment?") with *Dobara
+boliye* and *Type karein* actions. It never replaces real words with a generic
+"Samajh nahi aaya". The parser works from tokens and numbers, not a phrase list:
+word order, code-mixing, glued Bengali hundreds ("তিনশো"), Indian amount words
+("dhai sau", "saade teen sau") and case endings on names ("Rameshinu",
+"ரமேஷுக்கு", "রমেশের", "रमेशला") are all handled.
 
 ## 9. Run instructions (local and deployed)
 
@@ -209,6 +235,9 @@ npm run e2e              # Playwright, real Chromium, 8 checks + screenshots
 node scripts/gnani-smoke.mjs "Ramesh ka teen sau chaalis udhaar" hi-IN
 node scripts/gateway-live-check.mjs
 node scripts/stt-benchmark.mjs --langs hi-IN --limit 5
+node scripts/verify-languages.mjs                 # real audio, all 8 languages
+node scripts/verify-languages.mjs --langs ml-IN   # re-check one, keeps earlier rows
+node scripts/transcript-display-check.mjs         # Playwright: transcript survives a parse failure
 ```
 
 `npm test` exits non-zero **only** because `tests/run.mjs` is a 39-byte
@@ -264,7 +293,12 @@ Not done / not verified:
 * **No live microphone session was tested.** This machine has no microphone in
   the automated environment, so the mic → Prisma → UI path is implemented and
   unit-tested at the gateway boundary but not exercised end-to-end by a human
-  voice. The keyboard path and scripted voice cover the rest of the flow.
+  voice. The eight-language evidence above used Timbre-synthesised audio; the
+  displayed-transcript contract was checked in Chromium by injecting the exact
+  Prisma strings (screenshot `tests/artifacts/06-transcript-preserved.png`).
+* **`indic-auto` is unreliable for Kannada and Marathi** in this test: it
+  misdetected Kannada as Hindi. Explicit language selection was correct for all
+  eight languages, so the default is an explicit choice.
 * **No real-voice latency p50/p95.** Only the numbers above were measured, and
   headless runs are excluded by definition. Use `scripts/stt-benchmark.mjs` with a
   real microphone and `tests/recorder.html` to collect 20+ runs.

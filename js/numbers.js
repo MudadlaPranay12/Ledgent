@@ -45,6 +45,16 @@ for (const part of TE_TABLE.split('|')) {
   for (const w of list.split(',')) if (w) WORDS.set(w, { v: Number(n), en: false, tens: Number(n) >= 20 && Number(n) % 10 === 0 });
 }
 
+// Bengali number words. Assamese/Bengali often glue the hundred scale on:
+// "তিনশো" (tinsho) = three hundred, handled by readGluedScale below.
+const BN_TABLE =
+  '1 ek|2 dui|3 tin|4 char|5 panch|6 choy|7 shat|8 aat|9 noy|10 dosh|' +
+  '20 bish|30 trish|40 chollish|50 ponchash|60 shattor|70 shottor|80 ashi|90 nobboi';
+for (const part of BN_TABLE.split('|')) {
+  const [n, list] = part.split(' ');
+  for (const w of list.split(',')) if (w && !WORDS.has(w)) WORDS.set(w, { v: Number(n), en: false, tens: Number(n) >= 20 && Number(n) % 10 === 0 });
+}
+
 const EN_UNITS = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 EN_UNITS.forEach((w, i) => { if (i >= 0) WORDS.set(w, { v: i, en: true, tens: false }); });
 const EN_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
@@ -168,7 +178,7 @@ export function readNumber(tokens, i) {
       info = { v: parseFloat(t), en: false, tens: false, fuzzy: false, digits: true };
       anyDigits = true;
     } else {
-      info = lookupNumberWord(t);
+      info = lookupNumberWord(t) || readGluedScale(t);
     }
     if (!info) break;
     if (info.fuzzy) fuzzy = true;
@@ -188,6 +198,22 @@ export function readNumber(tokens, i) {
 
   if (consumed === 0) return null;
   return { value: total + cur, next: j, digits: anyDigits, count: consumed, fuzzy };
+}
+
+// "tinsho" = tin + sho (300), "paanchsho" = 500. Bengali and a few other
+// scripts attach the hundred word instead of using a separate token.
+const GLUED_SCALES = [['shoto', 100], ['sho', 100], ['hazar', 1000], ['hajar', 1000]];
+function readGluedScale(t) {
+  for (const [suffix, scale] of GLUED_SCALES) {
+    if (!t.endsWith(suffix) || t.length <= suffix.length) continue;
+    const head = t.slice(0, -suffix.length);
+    // Transliteration can leave an inherent vowel behind: "tinasho" = tin + sho.
+    const n = lookupNumberWord(head) || lookupNumberWord(head.replace(/a$/, ''));
+    if (n && n.v > 0 && n.v < 100) {
+      return { v: scale === 100 ? n.v * 100 : n.v * 1000, en: false, tens: false, fuzzy: !!n.fuzzy };
+    }
+  }
+  return null;
 }
 
 // ---------- Amount extraction ----------

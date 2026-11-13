@@ -83,6 +83,8 @@ button { font: inherit; cursor: pointer; border: 0; }
 .cursor { display: inline-block; width: 2px; height: 1.05em; background: var(--gold); vertical-align: text-bottom; margin-left: 2px; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+#heardRaw { margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,.35); font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: rgba(255,255,255,.85); }
+#heardRaw .raw-lbl { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin-right: 4px; }
 body.listening #heard { border-color: var(--gold); background: rgba(217,164,65,.18); }
 body.listening #heard::before { content: "● "; color: #ff6b6b; animation: blink .8s steps(2) infinite; }
 

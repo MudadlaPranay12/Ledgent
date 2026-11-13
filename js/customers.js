@@ -52,11 +52,23 @@ function narrowByLabel(list, words) {
 // Names arrive with case endings glued on across languages: "Rameshinu"
 // (Malayalam), "Ramesh-ku" (Tamil), "Rameshla" (Marathi). Strip a trailing
 // particle before comparing, keeping at least four characters of the name.
-const CASE_SUFFIXES = ['inu', 'inteth', 'nte', 'ude', 'ku', 'ki', 'nu', 'la', 'le', 'ge', 'ne', 'ke', 'de', 'da', 'di', 'ka', 'ko', 'il', 'ton', 'se'];
+const CASE_SUFFIXES = [
+  // Tamil / Telugu / Kannada / Malayalam
+  'ukku', 'kku', 'ukka', 'iki', 'ige', 'alaa', 'ala', 'ula', 'ina', 'inu', 'in', 'inte', 'inteth',
+  'laa', 'an', 'han', 'n',
+  // Bengali / Marathi / Gujarati / Punjabi / Hindi
+  'era', 'er', 'cha', 'chi', 'che', 'chya', 'ala', 'la', 'le', 'de', 'da', 'di', 'ke', 'ka', 'ko',
+  'nu', 'ne', 'ku', 'ki', 'ge', 'il', 'ude', 'nte', 'ton', 'se',
+];
+// 'ramesh' and 'rames' are the same shopkeeper: some scripts drop the final -h.
+const nameCore = (k) => k.replace(/h$/, '');
 const nameVariants = (t) => {
-  const out = [t];
+  const out = [t, nameCore(t)];
   for (const s of CASE_SUFFIXES) {
-    if (t.endsWith(s) && t.length - s.length >= 4) out.push(t.slice(0, -s.length));
+    if (t.endsWith(s) && t.length - s.length >= 4) {
+      const stem = t.slice(0, -s.length);
+      out.push(stem, nameCore(stem));
+    }
   }
   return out;
 };
@@ -64,9 +76,11 @@ const nameVariants = (t) => {
 export function matchCustomer(words, customers = [], opts = {}) {
   const tokens = words.filter((t) => t !== ',');
   const expanded = [...new Set(tokens.flatMap(nameVariants))];
+  const cores = new Set(expanded.map(nameCore));
   const exact = [];
   for (const c of customers) {
-    if (nameKeys(c).some((k) => expanded.includes(k))) exact.push(c);
+    // exact spelling, or the same name with a genitive/case ending stripped
+    if (nameKeys(c).some((k) => expanded.includes(k) || cores.has(nameCore(k)))) exact.push(c);
   }
 
   let pool = exact;
@@ -75,7 +89,13 @@ export function matchCustomer(words, customers = [], opts = {}) {
   if (pool.length === 0) {
     pool = [];
     for (const c of customers) {
-      if (phonKeys(c).some((k) => expanded.some((t) => t.length >= 3 && phoneticKey(t) === k))) pool.push(c);
+      // A case ending can survive into the phonetic key ("rameeshana" -> rmshn),
+      // so a longer key that starts with the name's skeleton still matches.
+      if (phonKeys(c).some((k) => expanded.some((t) => {
+        if (t.length < 3) return false;
+        const key = phoneticKey(t);
+        return key === k || (k.length >= 3 && key.startsWith(k));
+      }))) pool.push(c);
     }
     matchedBy = 'phonetic';
   }

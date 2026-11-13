@@ -98,6 +98,56 @@ ok('quantity is not mistaken for money', () => {
   assert.equal(p.actions[0].amountPaise, 34000);
 });
 
+ok('case endings on names still resolve the customer', () => {
+  const rows = [
+    ['രമേശന് 300 രൂപ കടം.', 'ml-IN'],
+    ['റമേശിന് 300 രൂപ കടം.', 'ml-IN'],
+    ['രമേശിന് 300 രൂപ കടം.', 'ml-IN'],
+    ['ரமேஷுக்கு 300 ரூபா கடன்.', 'ta-IN'],
+    ['ரமேஷுக்கு 300 ரூபா கடன்.', 'ta-IN'],
+    ['रमेशला 300 रुपये उधार.', 'mr-IN'],
+    ['রমেশের তিনশো টাকা বাকি।', 'bn-IN'],
+  ];
+  for (const [text, lang] of rows) {
+    const p = parse(text);
+    assert.equal(p.intent, 'transaction', `${lang}: ${text}`);
+    assert.equal(p.actions[0].amountPaise, 30000, `${lang} amount`);
+    assert.equal(p.customer.status, 'ok', `${lang} customer`);
+    assert.equal(p.customer.id, 'r1', `${lang} customer id`);
+  }
+});
+
+ok('Bengali glued hundreds parse as 300', () => {
+  const p = parse('রমেশের তিনশো টাকা বাকি।');
+  assert.equal(p.actions[0].amountPaise, 30000);
+  assert.equal(p.actions[0].type, 'credit');
+});
+
+ok('word order and code-mixing do not matter', () => {
+  const rows = [
+    '300 udhaar Ramesh ka',
+    'Ramesh ka udhaar 300',
+    'Ramesh ka teen sau udhaar',
+    'ramesh 300 ka udhaar',
+    'Ramesh ko 300 rupaye diye',
+  ];
+  for (const text of rows) {
+    const p = parse(text);
+    assert.equal(p.intent, 'transaction', text);
+    assert.equal(p.actions[0].amountPaise, 30000, text);
+    assert.ok(['credit', 'payment'].includes(p.actions[0].type), `${text} direction`);
+    assert.equal(p.customer.status, 'ok', text);
+  }
+});
+
+ok('a real transcript survives even when the transaction does not parse', () => {
+  const text = 'मुझे कल बाजार जाना है';
+  const p = parse(text);
+  assert.equal(p.intent, 'unknown');
+  assert.equal(p.raw, text, 'raw transcript kept verbatim');
+  assert.ok(p.normalized.length > 0);
+});
+
 ok('Punjabi and Malayalam scripts transliterate to Roman keys', async () => {
   // exercised through the parser: a Gurmukhi amount word must still resolve
   const p = parse('ਰਮੇਸ਼ ਦੇ 300 ਰੁਪਏ ਉਧਾਰ');

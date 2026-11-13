@@ -1,0 +1,247 @@
+{
+  "at": "2026-11-13T13:28:31.088Z",
+  "voice": "Shivani",
+  "model": "timbre-v3.0",
+  "results": [
+    {
+      "lang": "hi-IN",
+      "name": "Hindi",
+      "spoke": "रमेश का 340 रुपये उधार लिख दो",
+      "tts": {
+        "bytes": 92160,
+        "seconds": 2.88,
+        "firstChunkMs": 584
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 90,
+        "explicitTranscript": "रमेश का 340 रुपये उधार लिख दो।",
+        "autoTranscript": "रमेश का 340 रुपये उधार लिख दो।",
+        "detectedLanguage": "hi-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 122,
+        "wallMs": 4670
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 34000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "en-IN",
+      "name": "English",
+      "spoke": "Give Suresh three hundred rupees credit",
+      "tts": {
+        "bytes": 76800,
+        "seconds": 2.4,
+        "firstChunkMs": 532
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 75,
+        "explicitTranscript": "Give Suresh 300 rupees credit.",
+        "autoTranscript": "Give Suresh 300 rupees credit.",
+        "detectedLanguage": "en-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 101,
+        "wallMs": 3813
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "s1",
+        "transcriptPreserved": true,
+        "question": null
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "te-IN",
+      "name": "Telugu",
+      "spoke": "గోపాల్ కి 300 రూపాయల అప్పు",
+      "tts": {
+        "bytes": 66560,
+        "seconds": 2.08,
+        "firstChunkMs": 482
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 65,
+        "explicitTranscript": "గోపాల్ కి 300 రూపాయల అప్పు.",
+        "autoTranscript": "గోపాల్ కి 300 రూపాయల అప్పు.",
+        "detectedLanguage": "te-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 108,
+        "wallMs": 3316
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "g1",
+        "transcriptPreserved": true,
+        "question": null
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "ta-IN",
+      "name": "Tamil",
+      "spoke": "ரமேஷுக்கு 300 ரூபா கடன்",
+      "tts": {
+        "bytes": 69120,
+        "seconds": 2.16,
+        "firstChunkMs": 439
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 68,
+        "explicitTranscript": "ரமேஷுக்கு 300 ரூபாய் கடன்.",
+        "autoTranscript": "ரமேஷுக்கு 300 ரூபாய் கடன்.",
+        "detectedLanguage": "ta-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 98,
+        "wallMs": 3560
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "kn-IN",
+      "name": "Kannada",
+      "spoke": "ರಮೇಶ್ ಗೆ 300 ರೂಪಾಯಿ ಸಾಲ",
+      "tts": {
+        "bytes": 64000,
+        "seconds": 2,
+        "firstChunkMs": 421
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 63,
+        "explicitTranscript": "ರಮೇಶ್ ಗೆ 300 ರೂಪಾಯಿ ಸಾಲ.",
+        "autoTranscript": "रमेश के मुन्नूर रुपये साला।",
+        "detectedLanguage": "kn-IN",
+        "autoDetectionCorrect": false,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 114,
+        "wallMs": 3294
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "ml-IN",
+      "name": "Malayalam",
+      "spoke": "രമേശിന് 300 രൂപ കടം",
+      "tts": {
+        "bytes": 66560,
+        "seconds": 2.08,
+        "firstChunkMs": 444
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 65,
+        "explicitTranscript": "രമേശിന് 300 രൂപ കടം.",
+        "autoTranscript": "രമേശിന് 300 രൂപ കടം.",
+        "detectedLanguage": "ml-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 115,
+        "wallMs": 3481
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "bn-IN",
+      "name": "Bengali",
+      "spoke": "রমেশের 300 টাকা বাকি",
+      "tts": {
+        "bytes": 56320,
+        "seconds": 1.76,
+        "firstChunkMs": 413
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 55,
+        "explicitTranscript": "রমেশের 300 টাকা বাকি।",
+        "autoTranscript": "রমেশের 300 টাকা বাকি।",
+        "detectedLanguage": "bn-IN",
+        "autoDetectionCorrect": true,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 83,
+        "wallMs": 2993
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    },
+    {
+      "lang": "mr-IN",
+      "name": "Marathi",
+      "spoke": "रमेशला 300 रुपये उधार",
+      "tts": {
+        "bytes": 74240,
+        "seconds": 2.32,
+        "firstChunkMs": 403
+      },
+      "stt": {
+        "prismaReceivedAudio": true,
+        "frames": 73,
+        "explicitTranscript": "रमेशला 300 रुपये उधार.",
+        "autoTranscript": "रमेश ला 300 रुपये उधार।",
+        "detectedLanguage": "mr-IN",
+        "autoDetectionCorrect": false,
+        "explicitLanguageHonored": true,
+        "serverLatencyMs": 93,
+        "wallMs": 3646
+      },
+      "parse": {
+        "intent": "transaction",
+        "amountPaise": 30000,
+        "type": "credit",
+        "customer": "ambiguous",
+        "transcriptPreserved": true,
+        "question": "Sabzi wale Ramesh ya Doodh wale Ramesh?"
+      },
+      "transcriptPreserved": true
+    }
+  ]
+}

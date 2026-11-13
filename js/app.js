@@ -29,6 +29,7 @@ const els = {
   status: $('status'), statusText: $('statusText'),
   tabs: $('tabs'), page: $('page'), custName: $('custName'), custLabel: $('custLabel'), custBal: $('custBal'),
   lines: $('lines'), heard: $('heard'), heardText: $('heardText'), cursor: document.querySelector('#heard .cursor'),
+  heardRaw: $('heardRaw'), heardRawText: $('heardRawText'),
   chips: $('chips'), draft: $('draft'), draftText: $('draftText'), choices: $('choices'),
   confirmBtn: $('confirmBtn'), cancelBtn: $('cancelBtn'),
   typeForm: $('typeForm'), typeInput: $('typeInput'),
@@ -44,6 +45,7 @@ const S = {
   activeCustomerId: null, holding: false, voice: null, lang: CONFIG.lang,
   lastTxnId: null, flags: [], lat: {}, finalLock: false, typingTimer: null, seenFinal: false,
   detectedLang: null, disclosed: false,
+  rawTranscript: '', rawTranscriptLang: '', lastParse: null,
 };
 
 // ---------------------------------------------------------------- status / toast
@@ -64,6 +66,39 @@ function showFatal(err) {
 }
 
 // ---------------------------------------------------------------- heard strip
+// The recognised sentence is kept verbatim, independent of what the parser made
+// of it. A parse failure never erases it.
+function setRawTranscript(text, lang) {
+  S.rawTranscript = String(text || '');
+  S.rawTranscriptLang = lang || S.detectedLang || '';
+  if (!els.heardRaw) return;
+  els.heardRaw.hidden = !S.rawTranscript;
+  if (!S.rawTranscript) return;
+  els.heardRawText.textContent = S.rawTranscriptLang
+    ? `${S.rawTranscript}  ·  ${S.rawTranscriptLang}`
+    : S.rawTranscript;
+}
+
+/** Transcript arrived, meaning did not: show both, ask for the transaction. */
+function showUnparsed(transcript) {
+  setHeard(transcript);
+  els.draft.hidden = false;
+  els.draft.classList.add('question');
+  els.draftText.textContent = `Suna: "${transcript}". Kaunsa customer, kitna, udhaar ya payment?`;
+  els.choices.innerHTML = '';
+  const again = document.createElement('button');
+  again.type = 'button';
+  again.textContent = 'Dobara boliye';
+  again.addEventListener('click', () => { els.draft.hidden = true; setStatus('idle', 'Listening · ready'); });
+  const type = document.createElement('button');
+  type.type = 'button';
+  type.textContent = 'Type karein';
+  type.addEventListener('click', () => { els.typeForm.hidden = false; els.typeInput.focus(); });
+  els.choices.append(again, type);
+  setStatus('needs', 'Transcript mila — transaction clear nahi');
+  speakNow('Samajh nahi aaya. Customer, amount aur udhaar ya payment boliye.');
+}
+
 function setHeard(text) {
   clearInterval(S.typingTimer);
   S.typingTimer = null;
@@ -372,6 +407,8 @@ function renderDebug() {
   const v = S.voice || {};
   const rows = [
     `voice: ${v.mode || '?'} — ${v.reason || ''}`,
+    `raw transcript: ${S.rawTranscript ? S.rawTranscript.slice(0, 40) : '—'} (${S.rawTranscriptLang || '—'})`,
+    `parse: ${S.lastParse ? S.lastParse.intent : '—'}`,
     `lang: ${S.lang}   today: ${S.today}`,
     `speech→transcript: ${d(S.lat.speechEnd, S.lat.transcriptAt)}`,
     `transcript→parse: ${d(S.lat.transcriptAt, S.lat.parsedAt)}`,
@@ -506,6 +543,7 @@ async function confirmCurrent() {
     const what = `${customerById(res.event.customer_id)?.name || 'Customer'}: ${rupees(res.event.amount_paise)} rupay ${res.event.transaction_type === 'credit' ? 'udhaar' : 'jama'}`;
     setStatus('saved', `Saved · ${what}`);
     els.heardText.textContent = `Saved — ${what}`;
+    setRawTranscript('', '');
     speakNow(`Bachaya gaya. ${what}`);
     if (res.duplicate) toast('Yeh entry pehle se saved thi');
   } catch (e) {
@@ -520,6 +558,7 @@ async function handleUtterance(text, source = 'chip') {
   if (!t) { setStatus('error', 'Error: No speech heard'); return; }
 
   S.lat.transcriptAt = S.lat.transcriptAt || performance.now();
+  if (source === 'voice') setRawTranscript(t);
   setHeard(t);
   setStatus('thinking', 'Thinking…');
 
@@ -528,6 +567,7 @@ async function handleUtterance(text, source = 'chip') {
     customerStats: (id) => stats(id),
   });
   S.lat.parsedAt = performance.now();
+  S.lastParse = { intent: parsed.intent, text: t };
 
   if (parsed.intent === 'unknown' && llmAvailable()) {
     const alt = await llmFallback(t, { customers: S.customers, today: S.today, activeDraft: S.session.draft });
@@ -600,10 +640,8 @@ async function route(parsed, text, source) {
     return;
   }
 
-  // unknown / empty
-  setStatus('error', 'Error: samajh nahi aaya');
-  typeIntoHeard('Samajh nahi aaya. Dobara boliye?');
-  speakNow('Samajh nahi aaya. Dobara boliye?');
+  // Transcript was real, the transaction was not. Keep the words on screen.
+  showUnparsed(text || S.rawTranscript);
 }
 
 async function correctLast(amount) {
@@ -656,10 +694,12 @@ async function initVoice() {
       if (!S.holding) return;
       setHeard(t);
     },
-    onFinal: (t) => {
+    onFinal: (t, meta) => {
       if (S.finalLock) return;
       S.finalLock = true;
       S.lat.transcriptAt = performance.now();
+      if (meta?.detected) S.detectedLang = meta.detected;
+      setRawTranscript(t, meta?.detected || S.detectedLang);
       S.holding = false;
       document.body.classList.remove('listening');
       handleUtterance(t, 'voice').finally(() => { setTimeout(() => { S.finalLock = false; }, 300); });
